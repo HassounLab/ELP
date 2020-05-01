@@ -1,6 +1,8 @@
 import numpy as np
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+#import tensorflow.compat.v1 as tf
+#tf.disable_v2_behavior()
+import tensorflow as  tf
+print(tf.__version__)
 import networkx as nx
 from collections import OrderedDict
 import math
@@ -14,7 +16,6 @@ import pickle
 from scipy.stats import logistic
 from embedding.nnEmbeddingDecoder import NNEmbeddingDecoder
 from embedding.nnEmbeddingEnzymeDecoder import NNEmbeddingEnzymeDecoder
-import IPython
 NODE_EMBED = "node_embed"
 NODE_ATTR_EMBED = "node_attr_embed"
 FGPT_EMBED = "fgpt_embed"
@@ -154,7 +155,6 @@ class EMEmbedding:
                 fgpts.append(G.nodes[n][self.fgpt_name].reshape((-1, 1)))
             fgpts = np.array(fgpts, dtype=np.float32)
             assert not np.any(np.isnan(fgpts))
-            IPython.embed()
             assert np.all(np.sum(fgpts, axis=1) > 0)
             self.fgpts = tf.constant(fgpts, dtype=tf.float32) 
             self.num_embeds[FGPT_EMBED] = len(fgpts[0])
@@ -226,7 +226,8 @@ class EMEmbedding:
         if et not in self.embed_types:
             raise ValueError("invalid embed type")
         
-        with tf.device('/gpu:%d' % tf_device):
+        #with tf.device('/gpu:%d' % tf_device):
+        if  True:
             def apply_neighbor(x):
                 v = x[0]
                 adj_row = x[1]

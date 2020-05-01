@@ -1,12 +1,26 @@
 #!/bin/bash
+#
+#SBATCH --account=normal
+#
+#SBATCH --job-name=elp
+#
+## output files
 #SBATCH --output=output-%j.log
 #SBATCH --error=output-%j.err
-#SBATCH --job-name=kegg-em
-#SBATCH --ntasks=4
-#SBATCH --nodes=1
-#SBATCH --time=300
-#SBATCH --mem=100gb
-#SBATCH --gres=gpu:1
+#
+# Estimated running time. 
+# The job will be killed when it runs 15 min longer than this time.
+#SBATCH --time=0-2:00:00
+#SBATCH --mem=50gb
+#
+## Resources 
+## -p gpu/batch  |job type
+## -N            |number of nodes
+## -n            |number of cpu 
+#SBATCH -p gpu 
+#SBATCH -N 2
+#SBATCH -n 2
+#SBATCH --exclude=pgpu01
 nvidia-smi
-#python3 run-exp.py kegg -m js
-python3 -u run-exp.py kegg -m em
+source activate liping
+stdbuf -o0 python -u run-exp.py kegg -m em

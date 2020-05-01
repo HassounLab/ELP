@@ -1,8 +1,10 @@
 import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import  tensorflow as tf
+print(tf.__version__)
+#import tensorflow.compat.v1 as tf
+#tf.disable_v2_behavior()
 import networkx as nx
 from collections import OrderedDict
 import math

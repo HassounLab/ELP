@@ -12,7 +12,6 @@ from sklearn.model_selection import train_test_split, KFold
 from evaluation.eval_util import sample_graph
 from evaluation.metrics import computeMAP, computePrecisionCurve, \
     getPrecisionReport, getMetricsHeader
-import IPython
 
 def print_graph_stats(G):
     print("%s has %d nodes, %d edges" %
@@ -285,19 +284,19 @@ def expLP(datum, emb_model, pred_modes, verbose=1, test_ratios=[0.5], rounds=3,
         #Gs = [{'train_G': train_G, 'test_G': test_G, 'train_neg_G': train_neg_G}] 
         Gs = graph_test_train_split_folds(G, nfolds)
         neg_edges = nx.complement(G).edges()
+    """
     for fold in range(nfolds):
         tr = fold
         fname = '%s/kegg/kegg_graph_fold_%d_%d.pkl' % (os.environ['STAGING'], fold, nfolds)
         with open(fname, 'rb') as f:
             Gset =  pickle.load(f)
-        """
+    """
     for tr, Gset in enumerate(Gs):
         fname = '%s/kegg/kegg_graph_fold_%d_%d.pkl' % (os.environ['STAGING'], tr, nfolds)
         with open(fname, 'wb') as f:
             pickle.dump(Gset, f)
             print('Dumped Gset to', fname)
         print("Running LP round", tr)
-        """
         """
             train_G, train_neg_G, test_G, nodelistMap = \
                 graph_test_train_split(
