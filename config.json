@@ -1,0 +1,147 @@
+
+{
+    "kegg": {
+        "pred_modes": ["nn"],
+        "evaluations": ["lp"],
+        "num_epochs": 1,
+        "nn" : {
+            "hidden_sizes": [32, 16],
+            "lr": 0.01
+        }, 
+        "mol_vae": {
+            "do_tgru": false,
+            "num_embed_layers": 5,
+            "embed_activation": "linear"
+        },
+        "graph_f": "kegg.eclass.pkl",
+        "embed_sizes": [128],
+        "lp": {
+            "sampling": false
+        },
+        "mol_vae_weight": 1.0,
+        "batch_size": 512,
+        "lr": 0.1,
+        "lr_node_attr": 0.0001,
+        "lr_mol_vae": 0.0001,
+        "beta": 0.00001,
+        "repeat": 1,
+        "train_verbose": 10,
+        "lp_test_ratios": [0.1],
+        "rounds": 1,
+        "use_edge_attr": false,
+        "edge_weight": 0.5,
+        "use_fgpt": true,
+        "fgpt_name": "fingerprint",
+        "edge_name": "rclass_int",
+        "use_node_attr": false,
+        "node_attr_postpone": 1,
+        "use_node_embed": true,
+        "savepath": "",
+        "save_embeddings": false,
+        "classify_encodings": false,
+        "stack_embeddings": false
+    },
+    "kegg-pub": {
+        "pred_modes": ["nn"],
+        "evaluations": ["lp"],
+        "num_epochs": 100,
+        "nn" : {
+            "hidden_sizes": [32, 16],
+            "lr": 0.1
+        }, 
+        "mol_vae": {
+            "do_tgru": false,
+            "num_embed_layers": 5,
+            "embed_activation": "linear"
+        },
+        "graph_f": "kegg.pubchem.pkl",
+        "embed_sizes": [128],
+        "lp": {
+            "sampling": false
+        },
+        "mol_vae_weight": 1.0,
+        "batch_size": 128,
+        "lr": 1.0,
+        "lr_node_attr": 0.0001,
+        "lr_mol_vae": 0.0001,
+        "beta": 0.0002,
+        "repeat": 1,
+        "train_verbose": 1,
+        "lp_test_ratios": [0.50],
+        "rounds": 1,
+        "use_edge_attr": false,
+        "use_fgpt": true,
+        "fgpt_name": "pubchem_fgpt",
+        "use_node_attr": false,
+        "node_attr_postpone": 10,
+        "use_node_embed": true,
+        "savepath": "logs/em",
+        "save_embeddings": false,
+        "classify_encodings": false,
+        "stack_embeddings": false
+    },
+    "karate": {
+        "lr": 0.01,
+        "K": 2,
+        "num_epochs": 300,
+        "batch_size": 16,
+        "num_samples": 16,
+        "oslom": {
+            "num_samples_comm": 1
+        },
+        "cfinder": {
+            "num_samples_comm": 2
+        },
+        "repeat": 1,
+        "train_verbose": 2,
+        "embed_sizes": [16],
+        "num_samples_aw": 2,        
+        "nn_batch_size": 8,
+        "walk_length": 5,
+        "evaluations": ["gr"]
+    },
+    "ppi": {
+        "K": 2,
+        "stratify": false,
+        "cfinder": {
+            "num_samples_comm": 16
+        },
+        "labelcmty": {
+            "num_samples_comm": 8
+        },
+        "init_value": 5,
+        "train_verbose": 1,
+        "repeat": 1,
+        "num_samples_aw": 2,
+        "walk_length": 4,
+        "embed_sizes": [128],
+        "pred_modes": ["nn"],
+        "evaluations": ["gr"]
+    },
+    "hepth": {
+        "cfinder": {
+            "num_samples_comm": 16
+        },
+        "repeat": 1,
+        "embed_sizes": [128],
+        "evaluations": ["gr"]
+    },
+    "astroph": {
+        "embed_sizes": [128],
+        "repeat": 1,
+        "evaluations": ["gr"]
+    },
+    "facebook": {
+        "oslom": {
+            "num_samples_comm": 16
+        },
+        "embed_sizes": [256],
+        "num_samples_aw": 2,
+        "walk_length": 4,
+        "evaluations": ["gr", "lp"],
+        "repeat": 1
+    }
+}
+
+       
+      
