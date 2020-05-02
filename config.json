@@ -3,9 +3,10 @@
     "kegg": {
         "pred_modes": ["nn"],
         "evaluations": ["lp"],
-        "num_epochs": 100,
+        "num_epochs": 1,
         "nn" : {
             "hidden_sizes": [32, 16],
+            "num_epochs": 1,
             "lr": 0.01
         }, 
         "mol_vae": {

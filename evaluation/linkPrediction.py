@@ -267,8 +267,7 @@ def expLP(emb_model, verbose=1,  rounds=3,
         else:
             print("Using all test_G edges, not sampling")
             AUC, prec_curve = run_one_LP(
-                emb_model, test_G, neg_edges
-                untrain_nodes=untrain_nodes)
+                emb_model, test_G, neg_edges, untrain_nodes=untrain_nodes)
             print('AUC: %.2f' % AUC)
             res.append(AUC)
     return ','.join(res)

@@ -58,7 +58,7 @@ def main(data=None, model_type=None, testmode=False, **kwargs):
     
     datadir = os.path.join(os.environ["DATAPATH"], data)
 
-    params = read_params(kwargs)
+    params = load_params(**kwargs)
     graph_f = os.path.join('%s/graph_f' % os.environ['DATAPATH'])
     G = read_graph(graph_f)
     emb_model = model(embed_size=embed_size, verbose=train_verbose, **params)

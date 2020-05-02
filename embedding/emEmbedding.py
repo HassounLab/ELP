@@ -113,7 +113,7 @@ class EMEmbedding:
             self.num_embeds[NODE_EMBED] = self.num_nodes
             self.embed_types.append(NODE_EMBED)
         
-        if self.p['use_fgpt:']
+        if self.p['use_fgpt']:
             fgpts = []
             for n in G.nodes:
                 fgpts.append(G.nodes[n][self.p['fgpt_name']].reshape((-1, 1)))
@@ -125,7 +125,7 @@ class EMEmbedding:
             print("Fgpt length", self.num_embeds[FGPT_EMBED])
             self.embed_types.append(FGPT_EMBED)
         
-        if self.use_edge_attr:
+        if self.p['use_edge_attr']:
             num_edge_attrs = 0
             for u, v, ri in G.edges(data=self.p['edge_name']):
                 if undirected and u > v:
@@ -209,7 +209,7 @@ class EMEmbedding:
         return tf.reduce_sum(h1 * h2, axis=1) # dot product
         
     def _rank_loss(self, pos_latent, neg_latent, embed_type):
-        return tf.reduce_mean(tf.nn.relu(self.['gamma'] + neg_latent - pos_latent))
+        return tf.reduce_mean(tf.nn.relu(self.p['gamma'] + neg_latent - pos_latent))
     
     def _edge_embed_assign_zeros_row_one(self):
         assert self.embeddings[EDGE_ATTR_EMBED]
