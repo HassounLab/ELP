@@ -13,7 +13,7 @@ import time
 
 class NNEmbeddingDecoder:
     def __init__(self, embeddings, edges, comp_edges,
-                 use_embeddings=False, hidden_sizes=None, 
+                 hidden_sizes=None, 
                  lr=1.0, verbose=1, beta=0.00001, num_epochs=10, 
                  batch_size=1028, **kwargs):
 
@@ -30,7 +30,6 @@ class NNEmbeddingDecoder:
         
         self.num_edges = len(edges)        
             
-        self.use_embeddings = use_embeddings
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.beta = beta
@@ -127,7 +126,6 @@ class NNEmbeddingDecoder:
 
     def _run_nn(self):
         starttime = time.time()        
-        print("Running nn with using embeddings %r" % self.use_embeddings)
         
         
         # neural network weights
@@ -154,9 +152,6 @@ class NNEmbeddingDecoder:
             logits_uv = self._get_logits(u_embeds, v_embeds, et_i)
             logits_vu = self._get_logits(v_embeds, u_embeds, et_i)
             logits_ = tf.multiply(0.5, tf.add(logits_uv, logits_vu))
-            if self.use_embeddings:
-                inner_prods = tf.reduce_sum(tf.multiply(u_embeds, v_embeds), axis=1)
-                logits_ += inner_prods
             all_logits.append(logits_)
         self.logits = tf.reduce_sum(all_logits, axis=0)
 

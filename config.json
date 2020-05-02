@@ -3,7 +3,7 @@
     "kegg": {
         "pred_modes": ["nn"],
         "evaluations": ["lp"],
-        "num_epochs": 1,
+        "num_epochs": 100,
         "nn" : {
             "hidden_sizes": [32, 16],
             "lr": 0.01
@@ -18,28 +18,21 @@
         "lp": {
             "sampling": false
         },
-        "mol_vae_weight": 1.0,
-        "batch_size": 512,
-        "lr": 0.1,
-        "lr_node_attr": 0.0001,
-        "lr_mol_vae": 0.0001,
-        "beta": 0.00001,
+        "batch_size": 2048,
+        "lr": 0.01,
+        "gamma": 10,
+        "beta": 0.0002,
         "repeat": 1,
-        "train_verbose": 10,
+        "train_verbose": 1,
         "lp_test_ratios": [0.1],
         "rounds": 1,
-        "use_edge_attr": false,
         "edge_weight": 0.5,
         "use_fgpt": true,
         "fgpt_name": "fingerprint",
         "edge_name": "rclass_int",
-        "use_node_attr": false,
-        "node_attr_postpone": 1,
         "use_node_embed": true,
         "savepath": "",
-        "save_embeddings": false,
-        "classify_encodings": false,
-        "stack_embeddings": false
+        "save_embeddings": false
     },
     "kegg-pub": {
         "pred_modes": ["nn"],
@@ -99,47 +92,6 @@
         "nn_batch_size": 8,
         "walk_length": 5,
         "evaluations": ["gr"]
-    },
-    "ppi": {
-        "K": 2,
-        "stratify": false,
-        "cfinder": {
-            "num_samples_comm": 16
-        },
-        "labelcmty": {
-            "num_samples_comm": 8
-        },
-        "init_value": 5,
-        "train_verbose": 1,
-        "repeat": 1,
-        "num_samples_aw": 2,
-        "walk_length": 4,
-        "embed_sizes": [128],
-        "pred_modes": ["nn"],
-        "evaluations": ["gr"]
-    },
-    "hepth": {
-        "cfinder": {
-            "num_samples_comm": 16
-        },
-        "repeat": 1,
-        "embed_sizes": [128],
-        "evaluations": ["gr"]
-    },
-    "astroph": {
-        "embed_sizes": [128],
-        "repeat": 1,
-        "evaluations": ["gr"]
-    },
-    "facebook": {
-        "oslom": {
-            "num_samples_comm": 16
-        },
-        "embed_sizes": [256],
-        "num_samples_aw": 2,
-        "walk_length": 4,
-        "evaluations": ["gr", "lp"],
-        "repeat": 1
     }
 }
 

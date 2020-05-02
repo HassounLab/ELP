@@ -5,12 +5,12 @@
 #SBATCH --job-name=elp
 #
 ## output files
-#SBATCH --output=output-%j.log
-#SBATCH --error=output-%j.err
+#SBATCH --output=logs/output-%j.log
+#SBATCH --error=logs/output-%j.err
 #
 # Estimated running time. 
 # The job will be killed when it runs 15 min longer than this time.
-#SBATCH --time=0-2:00:00
+#SBATCH --time=0-5:00:00
 #SBATCH --mem=50gb
 #
 ## Resources 
