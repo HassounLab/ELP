@@ -1,20 +1,15 @@
 
 {
-    "kegg": {
-        "pred_modes": ["nn"],
-        "evaluations": ["lp"],
+    "kegg_20": {
+        "evaluation": "lp",
         "num_epochs": 1,
-        "nn" : {
+        "decoder" : {
             "hidden_sizes": [32, 16],
             "num_epochs": 1,
             "lr": 0.01
         }, 
-        "mol_vae": {
-            "do_tgru": false,
-            "num_embed_layers": 5,
-            "embed_activation": "linear"
-        },
-        "graph_f": "kegg.eclass.pkl",
+        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
+        "fingerprint_file": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020_maccs_fp.pkl",
         "embed_sizes": [128],
         "lp": {
             "sampling": false
@@ -23,18 +18,36 @@
         "lr": 0.01,
         "gamma": 10,
         "beta": 0.0002,
-        "repeat": 1,
-        "train_verbose": 1,
-        "lp_test_ratios": [0.1],
         "rounds": 1,
         "edge_weight": 0.5,
         "use_fgpt": true,
-        "fgpt_name": "fingerprint",
         "edge_name": "rclass_int",
-        "use_node_embed": true,
-        "savepath": "",
-        "save_embeddings": false
+        "use_node_embed": true
     },
+    "kegg": {
+        "evaluation": "lp",
+        "num_epochs": 1,
+        "decoder" : {
+            "hidden_sizes": [32, 16],
+            "num_epochs": 1,
+            "lr": 0.01
+        }, 
+        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg.eclass.pkl",
+        "embed_sizes": [128],
+        "lp": {
+            "sampling": false
+        },
+        "batch_size": 2048,
+        "lr": 0.01,
+        "gamma": 10,
+        "beta": 0.0002,
+        "rounds": 1,
+        "edge_weight": 0.5,
+        "use_fgpt": true,
+        "edge_name": "rclass_int",
+        "use_node_embed": true
+    },
+    
     "kegg-pub": {
         "pred_modes": ["nn"],
         "evaluations": ["lp"],

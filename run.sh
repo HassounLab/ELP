@@ -10,8 +10,8 @@
 #
 # Estimated running time. 
 # The job will be killed when it runs 15 min longer than this time.
-#SBATCH --time=0-5:00:00
-#SBATCH --mem=50gb
+#SBATCH --time=0-6:00:00
+#SBATCH --mem=75gb
 #
 ## Resources 
 ## -p gpu/batch  |job type
@@ -23,4 +23,4 @@
 #SBATCH --exclude=pgpu01
 nvidia-smi
 source activate liping
-stdbuf -o0 python -u run-exp.py kegg -m em
+stdbuf -o0 python -u run-exp.py kegg_20 -m em

@@ -9,23 +9,30 @@ import time
 from argparse import ArgumentParser
 import pprint
 from datetime import datetime
-
-from embedding.emEmbedding import EMEmbedding as EE
-from embedding.node2vec import node2vec as N2V
-from embedding.deepwalk import deepwalk as DW
-
+import pickle
+from models.emEmbedding import EMEmbedding as EE
+from models.node2vec import node2vec as N2V
+from models.deepwalk import deepwalk as DW
+from models.jaccardSimilarity import JaccardSimilarity as JS
+from models.l2svm import L2SVM as SVM
 from evaluation.linkPrediction import expLP
-from evaluation.jaccardSimilarity import JaccardSimilarity as JS
 
 def read_graph(graph_f):
-    if graph_f.endswith(".txt"):
-        G = nx.read_edgelist(graph_f, create_using=nx.Graph(), nodetype=int)
-        G = G.to_directed()
-    elif graph_f.endswith(".pkl"):
+    if graph_f.endswith(".pkl"):
         G = nx.read_gpickle(graph_f)
+    else: 
+        G = nx.read_edgelist(graph_f)
+    return G
+
+def load_fingerprints(G, fingerprint_file):
+    with open(fingerprint_file, 'rb') as f:
+        fingerprints = pickle.load(f)
+    G = G.subgraph(list(fingerprints.keys())).copy()
+    nx.set_node_attributes(G, values=fingerprints, name='fingerprint')
+    return G
 
 eval_methods = ['lp']
-def load_params(**kwargs):
+def load_params(data, model_type, **kwargs):
     try:
         params = json.load(open("config.json", "r"))[data]
         print('params from config.json', params)
@@ -41,29 +48,26 @@ def load_params(**kwargs):
     for k, v in kwargs.items():
         if v is None:
             continue
-        if k.startswith("nn_"):
-            k = k[3:]
-            params["nn"][k] = v
-        else:
-            params[k] = v
+        params[k] = v
     print("custom params", params)
     return params
 
-model_map = {'em': EE, 'js': JS,  'n2v': N2V, 'deepwalk': DW}
+model_map = {'em': EE, 'js': JS,  'n2v': N2V, 'deepwalk': DW, 'svm': SVM}
 def main(data=None, model_type=None, testmode=False, **kwargs):
     try:
         model = model_map[model_type]
     except KeyError:
         raise NameError('model type', model_type, 'not recognized')
-    
-    datadir = os.path.join(os.environ["DATAPATH"], data)
-
-    params = load_params(**kwargs)
-    graph_f = os.path.join('%s/graph_f' % os.environ['DATAPATH'])
-    G = read_graph(graph_f)
-    emb_model = model(embed_size=embed_size, verbose=train_verbose, **params)
-    if evaluation == 'lp':
-        res = expLP(G, emb_model, verbose=eval_verbose, **lpkwargs)
+    params = load_params(data, model_type, **kwargs)
+    """
+    G = read_graph(params['graph_f'])
+    if params['use_fgpt']:
+        G = load_fingerprints(G, params['fingerprint_file'])
+    """
+    G = None
+    emb_model = model(**params)
+    if params['evaluation'] == 'lp':
+        res = expLP(G, emb_model, **params)
     
     resfile = '%s-%s.results.txt' % (data, model_type)       
     with open(resfile, 'a') as f:
