@@ -10,19 +10,13 @@ from argparse import ArgumentParser
 import pprint
 from datetime import datetime
 import pickle
-from models.emEmbedding import EMEmbedding as EE
-from models.node2vec import node2vec as N2V
-from models.deepwalk import deepwalk as DW
-from models.jaccardSimilarity import JaccardSimilarity as JS
-from models.l2svm import L2SVM as SVM
-from evaluation.linkPrediction import expLP
+from evaluation.linkPrediction import experimentLinkPrediction as expLP
+from evaluation.pathwayReconstruction import experimentPathwayReconstruction as expPR
 
 def read_graph(graph_f):
     if graph_f.endswith(".pkl"):
-        G = nx.read_gpickle(graph_f)
-    else: 
-        G = nx.read_edgelist(graph_f)
-    return G
+        return nx.read_gpickle(graph_f)
+    return nx.read_edgelist(graph_f)
 
 def load_fingerprints(G, fingerprint_file):
     with open(fingerprint_file, 'rb') as f:
@@ -51,33 +45,51 @@ def load_params(data, model_type, **kwargs):
         params[k] = v
     print("custom params", params)
     return params
-
-model_map = {'em': EE, 'js': JS,  'n2v': N2V, 'deepwalk': DW, 'svm': SVM}
+# wrap this in a function so we don't import certain packages unless we must
+# namely tensorflow, which is only installed in a virtual enviroment
+def get_model(model_type):
+    if model_type == 'ep':
+        from models.epEmbedding import EPEmbedding
+        return EPEmbedding
+    elif model_type == 'n2v' or model_type == 'node2vec':
+        from models.node2vec import Node2vec
+        return Node2vec
+    elif model_type == 'dw' or model_type == 'deepwalk':
+        from models.deepwalk import Deepwalk
+        return Deepwalk
+    elif model_type == 'js' or model_type == 'jaccard':
+        from models.jaccardSimilarity import JaccardSimilarity
+        return JaccardSimilarity
+    elif model_type == 'svm':
+        from models.l2svm import L2SVM
+        return L2SVM
+    raise NameError('model type', model_type, 'not recognized')
+       
 def main(data=None, model_type=None, testmode=False, **kwargs):
-    try:
-        model = model_map[model_type]
-    except KeyError:
-        raise NameError('model type', model_type, 'not recognized')
     params = load_params(data, model_type, **kwargs)
+    model = get_model(model_type)
     """
     G = read_graph(params['graph_f'])
     if params['use_fgpt']:
         G = load_fingerprints(G, params['fingerprint_file'])
     """
-    G = None
     emb_model = model(**params)
+    resfile = 'logs/%s-%s.results.txt' % (data, model_type)       
     if params['evaluation'] == 'lp':
-        res = expLP(G, emb_model, **params)
+        G = None
+        expLP(G, emb_model, resfile, **params)
+    if params['evaluation'] == 'pr':
+        G = read_graph(params['graph_f'])
+        if params['use_fgpt']:
+            G = load_fingerprints(G, params['fingerprint_file'])
+        expPR(G, emb_model, resfile, **params)
     
-    resfile = '%s-%s.results.txt' % (data, model_type)       
-    with open(resfile, 'a') as f:
-        f.write(res + '\n')
     print('results saved to', resfile)
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument('data')
     parser.add_argument('-m', '--model_type', default="baseline")
-    
+    parser.add_argument('-e', '--evaluation', default='lp') 
     parser.add_argument("--batch_size", type=int, default=None)
     parser.add_argument("--beta", type=float, default=None)
     parser.add_argument("--beta_edge", type=float, default=None)

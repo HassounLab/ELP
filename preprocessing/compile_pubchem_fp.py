@@ -49,7 +49,7 @@ def get_pubchem_fingerprints_from_compound(compound):
                         'property/Fingerprint2D/JSON',
                  data={'cid': ','.join('%d' % cid for cid in cids)},
                  timeout=30)
-    except requests.exceptions.timeout:
+    except requests.exceptions.Timeout:
         print('Fingerpring request timed out for', compound, file=sys.stderr)
         return None
     if response.status_code != 200:

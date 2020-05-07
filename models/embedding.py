@@ -6,7 +6,6 @@ import math
 import os
 import time
 from scipy.stats import logistic
-from embedding.nnEmbeddingDecoder import NNEmbeddingDecoder
 
 class Embedding:
     def __init__(self, embed_size=128, num_epochs=500, batch_size=1024, 
@@ -20,7 +19,6 @@ class Embedding:
         self.num_samples = num_samples
         self.verbose = verbose
         self.init_value = init_value 
-        self.nn_kwargs = kwargs["nn"] if "nn" in kwargs else {} # dictionary containing params for nn
     def number_of_nodes(self):
         return self.num_nodes
 

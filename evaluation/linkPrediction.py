@@ -11,8 +11,7 @@ from sklearn.metrics import roc_auc_score, roc_curve
 from scipy.stats import logistic
 from sklearn.model_selection import train_test_split, KFold
 from evaluation.eval_util import sample_graph
-from evaluation.metrics import computeMAP, computePrecisionCurve, \
-    getPrecisionReport, getMetricsHeader
+from evaluation.metrics import precision_at_ks, mean_average_precision
 
 def print_graph_stats(G):
     print("%s has %d nodes, %d edges" %
@@ -69,15 +68,15 @@ def graph_test_train_split_folds(G, nfolds):
             toremove.append(n)
     print('Removing %d nodes because of missing fingerprints' % len(toremove))
     G.remove_nodes_from(toremove)
+    print('Removing %d edges because of self loops' % nx.number_of_selfloops(G))
+    self_loop_edges = nx.selfloop_edges(G)
+    G.remove_edges_from(self_loop_edges)
     
     edges = np.array(G.edges())
     neg_G = nx.complement(G)
     kf = KFold(n_splits=nfolds, shuffle=True)
     fgpt_attr = nx.get_node_attributes(G, name='fingerprint')
     for i, (train_idx, test_idx) in enumerate(kf.split(edges)):
-        if i == 0:
-            yield None
-            continue
         test_G = nx.Graph()
         test_G.add_edges_from(edges[test_idx])
         test_G.name = 'test_G_%d' % i
@@ -85,11 +84,15 @@ def graph_test_train_split_folds(G, nfolds):
         train_G = nx.Graph()
         train_G.add_edges_from(edges[train_idx])
         train_G.name = 'train_G_%d' % i
+        remove_nodes = [n for n, d in G.degree() if d == 0]
+        print('Removing %d nodes from train_D due to no neighbors' % len(remove_nodes))
+        train_G.remove_nodes_from(remove_nodes)
+        """
         if not nx.is_connected(train_G):
             train_G = max(nx.weakly_connected_component_subgraphs(
                                 train_G.to_directed()), 
                           key=len)
-        
+        """
         nx.set_node_attributes(train_G, values=fgpt_attr, name='fingerprint')
         nx.set_node_attributes(test_G, values=fgpt_attr, name='fingerprint')
         nodelist = train_G.nodes()
@@ -115,6 +118,10 @@ def graph_test_train_split(G, test_ratio, remove_node_ratios=0.05,
             toremove.append(n)
     print('Removing %d nodes because of missing fingerprints' % len(toremove))
     G.remove_nodes_from(toremove)
+
+    self_loop_edges = nx.selfloop_edges(G)
+    G.remove_edges_from(self_loop_edges)
+    print('Removing %d edges because of self loops')
 
     train_G, test_G = G.copy(), G.copy()
     train_G.name, test_G.name = "train_G", "test_G"
@@ -148,27 +155,7 @@ def graph_test_train_split(G, test_ratio, remove_node_ratios=0.05,
     return train_G, train_neg_G, test_G, nodelistMap
 
 
-def prec_at_ks(edges, pred_weights, test_G, ks=None):
-    if ks is None:
-        ks = [2 ** i for i in range(10)]
-    
-    pred_edgelist = [(st, ed, w) for ((st, ed), w) in zip(edges, pred_weights)]
-    pred_edgelist = sorted(pred_edgelist, key=itemgetter(2), reverse=True)
-    
-    prec_curve = []
-    correct_edge = 0
-    
-    for i in range(min(ks[-1], len(pred_edgelist))):
-        st, ed, _ = pred_edgelist[i]
-        if test_G.has_edge(st, ed):
-            correct_edge += 1
-        if (i + 1) in ks:
-            prec_curve.append((i + 1, correct_edge / (i + 1)))
-    
-    return prec_curve
-
-
-def run_one_LP(emb_model, test_G, neg_G):
+def run_one_LP(model, test_G, neg_G):
     if test_G.number_of_nodes() == 0:
         return 0, []
  
@@ -181,27 +168,29 @@ def run_one_LP(emb_model, test_G, neg_G):
     print("false edges shape", false_edges.shape)
     edges = np.concatenate((true_edges, false_edges))
     y_true = np.concatenate((np.ones(len(true_edges)), np.zeros(len(false_edges))))
-    y_score = emb_model.get_edge_weights(edges, use_logistic=True)
+    y_score = model.get_edge_weights(edges, use_logistic=True)
     AUC = roc_auc_score(y_true, y_score)
-    
-    precision_curve = prec_at_ks(edges, y_score, test_G)
+    print('AU')
+    precision_curve = precision_at_ks(edges, y_score, true_edges)
     print("Precision curve", precision_curve)
+    map_ = mean_average_precision(edges, y_score, true_edges)
+    print('MAP', map_)
+    return AUC, precision_curve, map_
 
-    return AUC, precision_curve
-
-def expLP(G, emb_model, verbose=1,  rounds=3, 
+def experimentLinkPrediction(G, model, resfile, rounds=3, 
           n_sampled_nodes=2048, sampling=True, nfolds=5,
           random_seed=None, inductive=False,  **params):
-    if verbose:
-        print("\nLink Prediction")
+    print("\nLink Prediction experiments")
 
     if random_seed:
         np.random.seed(random_seed)
     # todo: comment back in
     #print("Original G has %d nodes, %d edges" % 
     #      (G.number_of_nodes(), G.number_of_edges()))
-    res = {}
     print("Running LP", "inductively" if inductive else "transductively")
+    if not os.path.exists(resfile):
+        with open(resfile, 'w') as f:
+            f.write('AUC,precision_curve,MAP\n')
     if inductive:
         test_ratios = [0.0]
         train_G, train_neg_G, test_G, untrain_nodes, \
@@ -214,7 +203,6 @@ def expLP(G, emb_model, verbose=1,  rounds=3,
         # todo: comment back in
         #Gs = graph_test_train_split_folds(G, nfolds)
         pass
-    res = []
     for fold in range(nfolds):
         print('\nExperiment round', fold)
         fname = '%s/kegg/kfolds/kegg_graph_fold_%d_%d.pkl' % (os.environ['DATAPATH'], fold, nfolds)
@@ -241,17 +229,25 @@ def expLP(G, emb_model, verbose=1,  rounds=3,
                 datum["cmty"] = relabel_cmty(datum["cmty"], nodelistMap) 
         """
         train_G,  test_G, neg_G = Gset['train_G'], Gset['test_G'], Gset['neg_G']
-        for G_ in [train_G, test_G, neg_G]:
-            for i, n in enumerate(G_.nodes):
-                assert i == n, G_.name
+        for i, n in enumerate(train_G.nodes):
+            assert i == n, G_.name
+        for n in test_G.nodes:
+            assert n in train_G.nodes
+        print('Removing %d edges because of self loops' % nx.number_of_selfloops(test_G))
+        self_loop_edges = nx.selfloop_edges(test_G)
+        test_G.remove_edges_from(self_loop_edges)
+        print('Removing %d edges because of self loops' % nx.number_of_selfloops(train_G))
+        self_loop_edges = nx.selfloop_edges(train_G)
+        train_G.remove_edges_from(self_loop_edges)
 
-        emb_model.learn_embedding(G=train_G, val_G=test_G)
+
+        model.learn_embedding(G=train_G)#, val_G=test_G)
         untrain_nodes = []
         N = train_G.number_of_nodes()
         # todo: comment back in
         #if sampling and N > n_sampled_nodes:
         if sampling:
-            AUCs = []
+            AUC = []
             for r in range(rounds):
                 print("sampling round ", r)
                 node_list = sample_graph(train_G, n_sampled_nodes, 
@@ -260,18 +256,21 @@ def expLP(G, emb_model, verbose=1,  rounds=3,
                 sampled_test_G = test_G.subgraph(node_list).copy()
                 sampled_neg_G = neg_G.subgraph(node_list).copy()
 
-                AUCs, prec_curve = run_one_LP(
-                    emb_model, sampled_test_G, sampled_neg_G)
+                AUCs, prec_curve, map_ = run_one_LP(
+                    model, sampled_test_G, sampled_neg_G)
                 AUC.append(AUCs)
-            print('AUCs: ', AUCs)
-            res.append(np.mean(AUCs))
+            with open(resfile, 'a') as f:
+                f.write('%s,%s,%f\n'
+                        % (';'.join([str(x) for x in AUC]), 
+                           ';'.join([str(x) for x in prec_curve]),
+                           map_))
+            
         else:
             print("Using all test_G edges, not sampling")
-            AUC, prec_curve = run_one_LP(emb_model, test_G, neg_G)
-            print('AUC: %.2f' % AUC)
-            res.append(AUC)
-    return ','.join([str(x) for x in res])
-
+            AUC, prec_curve, map_ = run_one_LP(model, test_G, neg_G)
+            with open(resfile, 'a') as f:
+                f.write('%f,%s,%f\n'\
+                        % (AUC, ';'.join([str(x) for x in prec_curve]), map_))
 
 
 

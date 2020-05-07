@@ -4,9 +4,8 @@ import networkx as nx
 import numpy as np
 from scipy.stats import logistic
 
-from embedding.embedding import Embedding
-from embedding.nnEmbeddingDecoder import NNEmbeddingDecoder
-class node2vec(Embedding):
+from models.nnEmbeddingDecoder import NNEmbeddingDecoder
+class Node2vec:
     def __init__(self, embed_size=128, **kwargs):
         self.nn_kwargs = kwargs["nn"] if "nn" in kwargs else {} # dictionary containing params for nn
         if "num_epochs" not in self.nn_kwargs:

@@ -4,9 +4,8 @@ import networkx as nx
 import numpy as np
 from scipy.stats import logistic
 
-from embedding.embedding import Embedding
-from embedding.nnEmbeddingDecoder import NNEmbeddingDecoder
-class deepwalk(Embedding):
+from models.nnEmbeddingDecoder import NNEmbeddingDecoder
+class Deepwalk:
     def __init__(self, embed_size=128, **kwargs):
         self.embed_size = embed_size
         self.nn_kwargs = kwargs["nn"] if "nn" in kwargs else {} # dictionary containing params for nn

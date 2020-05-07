@@ -1,67 +1,48 @@
+from collections import defaultdict
 import numpy as np
-import networkx as nx
+from operator import itemgetter
 
-precision_pos = [2, 4, 8, 16, 32, 64, 128]
+def precision_at_ks(edges, pred_weights, true_edges, ks=None):
+    if ks is None:
+        ks = [2 ** i for i in range(10)]
 
-def computePrecisionCurve(predicted_edge_list, true_digraph, max_k=-1):
-    if max_k == -1:
-        max_k = len(predicted_edge_list)
-    else:
-        max_k = min(max_k, len(predicted_edge_list))
+    pred_edgelist = [(u, v, w) for ((u, v), w) in zip(edges, pred_weights)]
+    pred_edgelist = sorted(pred_edgelist, key=itemgetter(2), reverse=True)
 
-    sorted_edges = sorted(predicted_edge_list, key=lambda x: x[2], reverse=True)
-
-    precision_scores = []
-    delta_factors = []
+    prec_curve = []
     correct_edge = 0
-    for i in range(max_k):
-        if true_digraph.has_edge(sorted_edges[i][0], sorted_edges[i][1]):
+
+    true_edges = set([(u, v) for u, v in true_edges])
+
+    for i in range(min(ks[-1], len(pred_edgelist))):
+        u, v, _ = pred_edgelist[i]
+        if (u, v) in true_edges:
             correct_edge += 1
-            delta_factors.append(1.0)
-        else:
-            delta_factors.append(0.0)
-        precision_scores.append(1.0 * correct_edge / (i + 1))
-    return precision_scores, delta_factors
+        if (i + 1) in ks:
+            prec_curve.append((i + 1, correct_edge / (i + 1)))
 
-def computeMAP(predicted_edge_list, true_digraph, max_k=-1):
-    node_num = true_digraph.number_of_nodes()
-    node_edges = {}
-    for n in true_digraph.nodes():
-        node_edges[n] = []
-    for st, ed, w in predicted_edge_list:
-        try:
-            assert st in node_edges
-        except AssertionError:
-            print("Predicted node", st, "not in true_digraph")
-        node_edges[st].append((st, ed, w))
-    node_AP = [0.0] * node_num
-    count = 0
-    for i, n in enumerate(true_digraph.nodes()):
-        if true_digraph.out_degree(n) == 0:
-            continue
-        count += 1
-        precision_scores, delta_factors = computePrecisionCurve(
-            node_edges[n], true_digraph, max_k)
-        precision_rectified = [p * d for p, d in \
-            zip(precision_scores, delta_factors)]
-        if sum(delta_factors) == 0:
-            node_AP[i] = 0
-        else:
-            node_AP[i] = float(sum(precision_rectified) / sum(delta_factors))
-    return sum(node_AP) / count
+    return prec_curve
 
-def getPrecisionReport(prec_curv, edge_num):
-    result_str = ''
-    temp_pos = precision_pos[:] + [edge_num]
-    for p in temp_pos:
-        if p < len(prec_curv):
-            result_str += "\t%.3f" % prec_curv[p - 1]
+def mean_average_precision(edges, pred_weights, true_edges):
+    adjlist = defaultdict(list)
+    for (u, v), w in zip(edges, pred_weights):
+        adjlist[u].append((v, w))
+        adjlist[v].append((u, w))
+    true_edges = set([(u, v) for u, v in true_edges] + [(v, u) for v, u in true_edges])
+    AP = []
+    for u, vws in adjlist.items():
+        vws = sorted(vws, key=itemgetter(1), reverse=True)
+        precs = []
+        num_correct = 0
+        for i, (v, w) in enumerate(vws):
+            if (u, v) in true_edges:
+                num_correct += 1
+                precs.append(num_correct / (i + 1))
+            else:
+                precs.append(0)
+        if num_correct == 0:
+            AP.append(0)
         else:
-            result_str += "\t-"
-    return result_str[1:]
-
-def getMetricsHeader():
-    header = "MAP\t" + "\t".join(["P@%d" % p for p in precision_pos])
-    header += "\tP@EdgeNum"
-    return header
+            AP.append(sum(precs) / num_correct)
+    return np.mean(AP)
 

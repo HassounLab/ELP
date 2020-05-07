@@ -1,4 +1,4 @@
-import sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC
 import numpy as np
 
 class L2SVM:
@@ -37,7 +37,7 @@ class L2SVM:
  
         self.svm = LinearSVC(loss='hinge', C=self.C,
                              random_state=self.random_seed, verbose=1)
-        self.svm.fit(common_feature_vecs, labels)
+        self.svm.fit(self.feature_vecs, labels)
 
     def get_edge_weights(self, edges, **kwargs):
         ks1 = [self.mapping[(i, j)] for (i, j) in edges]
