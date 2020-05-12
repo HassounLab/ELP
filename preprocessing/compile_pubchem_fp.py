@@ -68,19 +68,25 @@ def get_pubchem_fingerprints_from_compound(compound):
             print('    * cid %d: %s' % (cid, fingerprints[cid].hex()))
         print()
     return convert_to_binary_vec(fingerprints[0][1])
-def compile_pubchem_fingerprints(compounds, output_file=None):
-    pubchem = {}
-    for i, n in enumerate(compounds):
-        fp = get_pubchem_fingerprints_from_compound(n)
-        if fp is not None:
-            pubchem[n] = fp
-        if (i + 1) % 500 == 0:
-            print('processed %d compounds' % (i + 1))
-    print('%d/%d nodes have Pubchem fingerprints' % (len(pubchem), len(compounds)))
-    if output_file is not None:
-        with open(output_file, 'wb') as f:
-            pickle.dump(pubchem, f)
-            print('Dumped to', output_file)
+def compile_pubchem_fingerprints(compounds, output_file):
+    if os.path.exists(output_file):
+        with open(output_file, 'rb') as f:
+            pubchem = pickle.load(f)
+        print('Using previously stored pubchem fingerprints')
+        print('%d fingerprints are already available' % (len(pubchem)))
+    else:
+        pubchem = {}
+    num_processed = len(pubchem)
+    for n in compounds:
+        if n not in pubchem:
+            fp = get_pubchem_fingerprints_from_compound(n)
+            if fp is not None:
+                pubchem[n] = fp
+    print('got pubchem fingerprints for %d compounds' % (len(pubchem) - num_processed))
+    print('%d/%d compounds have Pubchem fingerprints' % (len(pubchem), len(compounds)))
+    with open(output_file, 'wb') as f:
+        pickle.dump(pubchem, f)
+        print('Dumped to', output_file)
     return pubchem
 
 

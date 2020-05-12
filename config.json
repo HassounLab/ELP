@@ -1,15 +1,103 @@
 
 {
-    "kegg_20": {
+    "kegg_20_pc": {
         "evaluation": "lp",
-        "num_epochs": 1,
         "decoder" : {
             "hidden_sizes": [32, 16],
-            "num_epochs": 1,
             "lr": 0.01
         }, 
         "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
-        "fingerprint_file": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020_maccs_fp.pkl",
+        "fgpt_name": "pubchem",
+        "embed_sizes": [128],
+        "lp": {
+            "sampling": false
+        },
+        "logreg": {
+            "use_cv": true
+        },
+        "batch_size": 2048,
+        "lr": 0.01,
+        "gamma": 10,
+        "beta": 0.0002,
+        "rounds": 1,
+        "edge_weight": 0.5,
+        "use_fgpt": true,
+        "edge_name": "rclass_int",
+        "use_node_embed": true
+    },
+    "kegg_20": {
+        "evaluation": "lp",
+        "decoder" : {
+            "hidden_sizes": [32, 16],
+            "lr": 0.01
+        }, 
+        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
+        "fgpt_name": "pubchem",
+        "embed_sizes": [128],
+        "lp": {
+            "sampling": false
+        },
+        "batch_size": 2048,
+        "lr": 0.01,
+        "gamma": 10,
+        "beta": 0.0002,
+        "rounds": 1,
+        "edge_weight": 0.5,
+        "use_fgpt": true,
+        "edge_name": "rclass_int",
+        "use_node_embed": false
+    },
+    "kegg_20_node_only": {
+        "evaluation": "lp",
+        "decoder" : {
+            "hidden_sizes": [32, 16],
+            "lr": 0.01
+        }, 
+        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
+        "embed_sizes": [128],
+        "lp": {
+            "sampling": false
+        },
+        "batch_size": 2048,
+        "lr": 0.01,
+        "gamma": 10,
+        "beta": 0.0002,
+        "rounds": 1,
+        "edge_weight": 0.5,
+        "use_fgpt": false,
+        "edge_name": "rclass_int",
+        "use_node_embed": true
+    },
+    "kegg_20_maccs_only": {
+        "evaluation": "lp",
+        "decoder" : {
+            "hidden_sizes": [32, 16],
+            "lr": 0.01
+        }, 
+        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
+        "fgpt_name": "maccs",
+        "embed_sizes": [128],
+        "lp": {
+            "sampling": false
+        },
+        "batch_size": 2048,
+        "lr": 0.01,
+        "gamma": 10,
+        "beta": 0.0002,
+        "rounds": 1,
+        "edge_weight": 0.5,
+        "use_fgpt": true,
+        "edge_name": "rclass_int",
+        "use_node_embed": false
+    },
+    "kegg_20": {
+        "evaluation": "lp",
+        "decoder" : {
+            "hidden_sizes": [32, 16],
+            "lr": 0.01
+        }, 
+        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
+        "fgpt_name": "maccs",
         "embed_sizes": [128],
         "lp": {
             "sampling": false
@@ -24,7 +112,30 @@
         "edge_name": "rclass_int",
         "use_node_embed": true
     },
-    "kegg": {
+    "kegg_old_maccs": {
+        "evaluation": "lp",
+        "decoder" : {
+            "hidden_sizes": [32, 16],
+            "lr": 0.01
+        }, 
+        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg.eclass.pkl",
+        "fgpt_name": "maccs",
+        "embed_sizes": [128],
+        "lp": {
+            "sampling": false,
+            "load_prev": false
+        },
+        "batch_size": 2048,
+        "lr": 0.01,
+        "gamma": 10,
+        "beta": 0.0002,
+        "rounds": 1,
+        "edge_weight": 0.5,
+        "use_fgpt": true,
+        "edge_name": "rclass_int",
+        "use_node_embed": true
+    },
+    "kegg_old_pc": {
         "evaluation": "lp",
         "num_epochs": 1,
         "decoder" : {
@@ -33,9 +144,11 @@
             "lr": 0.01
         }, 
         "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg.eclass.pkl",
+        "fgpt_name": "pubchem",
         "embed_sizes": [128],
         "lp": {
-            "sampling": false
+            "sampling": false,
+            "load_prev": false
         },
         "batch_size": 2048,
         "lr": 0.01,

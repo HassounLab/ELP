@@ -41,14 +41,12 @@ class Deepwalk:
         print("Running deep walk")
         call(cmd, shell=True)
         print("Deep walk run finished")
-        self.load_embedding("%s/tmpKeggGraph.emb" % os.environ["TMPDIR"])
+        self._load_embedding("%s/tmpKeggGraph.emb" % os.environ["TMPDIR"])
         self.num_nodes = self.embeddings.shape[0]
         self.nn_decoder = None 
 
-    def get_predicted_adjacency_matrix(self, **kwargs):
-        return self.pre_nn_pred_adjmat
 
-    def load_embedding(self, file_name):
+    def _load_embedding(self, file_name):
         with open(file_name, 'r') as f:
             n, d = f.readline().strip().split()
             self.embeddings = np.zeros((int(n), int(d)), dtype=np.float32)
@@ -65,7 +63,7 @@ class Deepwalk:
             **self.nn_kwargs)
         return decoder
 
-    def get_edge_weights(self, edges, use_logistic=False, **kwargs): 
+    def get_edge_scores(self, edges, use_logistic=False, **kwargs): 
         if not self.nn_decoder:
             self.nn_decoder = self._run_nn_decoder()
         weights = self.nn_decoder.get_edge_logits(edges)

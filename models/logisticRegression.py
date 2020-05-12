@@ -1,12 +1,20 @@
-from sklearn.svm import LinearSVC
+import sklearn.linear_model as lm
+from sklearn.metrics import make_scorer, roc_auc_score
 import numpy as np
 
-class L2SVM:
-    def __init__(self, C=1, use_fgpt=True, random_seed=None, **kwargs):
+class LogisticRegression:
+    def __init__(self, C=1, Cs=10, use_fgpt=True, random_seed=None, use_cv=False, **kwargs):
         assert use_fgpt
         self.random_seed = random_seed
         self.C = C
-        print('L2SVM params -- C: %f\trandom_seed: %r' % (C, random_seed))
+        self.Cs = Cs
+        self.use_cv = use_cv
+        if use_cv: 
+            print('Logistic Regression CV params\n\tCs:', Cs)
+        else:
+            print('Logistic Regression params\n\tC:', C)
+    
+        print('\trandom_seed:', random_seed)
     def learn_embedding(self, G, **kwargs):
         npairs = G.number_of_nodes() * (G.number_of_nodes() - 1)
         self.mapping = {}
@@ -32,17 +40,24 @@ class L2SVM:
                 self.mapping[(j, i)] = k 
                 k += 1
         assert np.all(labels >= 0)
-
- 
-        self.svm = LinearSVC(loss='hinge', C=self.C,
-                             random_state=self.random_seed, verbose=1)
-        self.svm.fit(self.feature_vecs, labels)
+    
+        scoring = make_scorer(roc_auc_score, needs_proba=True)
+        if self.use_cv:
+            self.clf = lm.LogisticRegressionCV(
+                    Cs=self.Cs, cv=3, random_state=self.random_seed, verbose=1, 
+                    scoring=scoring)
+        else:
+            self.clf = lm.LogisticRegression(
+                    C=self.C, verbose=1, random_state=self.random_seed) 
+        
+        self.clf.fit(self.feature_vecs, labels)
 
     def get_edge_scores(self, edges, **kwargs):
         fv1 = [self.feature_vecs[self.mapping[(i, j)]] for (i, j) in edges]
         fv2 = [self.feature_vecs[self.mapping[(j, i)]] for (i, j) in edges]
-        ypred1 = self.svm.decision_function(fv1)
-        ypred2 = self.svm.decision_function(fv2) 
+        ypred1 = self.clf.predict_proba(fv1)
+        ypred2 = self.clf.predict_proba(fv2) 
         ypred = 0.5 * (ypred1 + ypred2)
+        ypred = ypred[:, list(self.clf.classes_).index(1)]
         return ypred        
 

@@ -31,7 +31,7 @@ default_params = {
      'beta': 0,
      'edge_name': 'rclass_int',
      'edge_weight': 1.0,
-     'random_seed': None,
+     'random_seed': 2020,
      'decoder': {
         'num_epochs': 40,
         'batch_size': 2048,
@@ -64,7 +64,6 @@ class EPEmbedding:
             self.p['decoder']["random_seed"] = self.p['random_seed']
 
         print('\n'.join('\t%s: %r' % (k, v) for k, v in self.p.items()))
-
     def get_embeddings(self):
         return np.hstack(self.final_embeddings)
     
@@ -86,7 +85,6 @@ class EPEmbedding:
             self.neg_edges = np.array(neg_G.edges())
         
         adjmat_np = nx.adjacency_matrix(G).todense()
-        assert np.all(np.sum(adjmat_np, axis=1) > 0)
         assert not np.any(np.isnan(adjmat_np))
         self.adjmat = tf.constant(adjmat_np, dtype=tf.float32) # TODO float problem?
         
@@ -176,7 +174,7 @@ class EPEmbedding:
         
         es = tf.nn.embedding_lookup(self.embeddings[EDGE_ATTR_EMBED], 
                                     lookup_ids)
-        print("edge embeds", es)
+        #print("edge embeds", es)
         return es
 
     def _get_neigh_embeds_h(self, v_nodes, et, is_training): 
@@ -186,15 +184,15 @@ class EPEmbedding:
         def apply_neighbor(x):
             v = x[0]
             adj_row = x[1]
-            print("apply neighbor to adj_row", adj_row)
+            #print("apply neighbor to adj_row", adj_row)
            
             where = tf.cond(is_training,
                             lambda : tf.greater(adj_row, 0),
                             lambda : tf.not_equal(adj_row, 0))
             neigh_nodes = tf.squeeze(tf.where(where), axis=1)
-            print('neigh_nodes', neigh_nodes)
+            #print('neigh_nodes', neigh_nodes)
             num_neigh_nodes = tf.shape(neigh_nodes)[0]
-            print('num neigh nodes shape (expect singleton)', num_neigh_nodes)
+            #print('num neigh nodes shape (expect singleton)', num_neigh_nodes)
             num_neigh_nodes = tf.maximum(num_neigh_nodes, 1) 
             neigh_node_es = self._get_embeds_h(neigh_nodes, et)
             if self.p['use_edge_attr']:
@@ -203,11 +201,11 @@ class EPEmbedding:
                 neigh_node_es += self._get_edge_embeds_h(v, neigh_nodes)
             e = tf.reduce_sum(neigh_node_es, axis=0)
             e /= tf.cast(num_neigh_nodes, dtype=tf.float32)
-            print("e shape", e)
+            #print("e shape", e)
             return e
         adjrows = tf.gather(self.adjmat, v_nodes) 
         es = tf.map_fn(apply_neighbor, (v_nodes, adjrows), dtype=tf.float32)
-        print('es shape', es)
+        #print('es shape', es)
         return es
     
     def _metric(self, h1, h2, et):
@@ -246,7 +244,7 @@ class EPEmbedding:
             regs.append(self._make_embed_variables(et))
         
         self.batch_nodes = tf.placeholder(tf.int64, shape=[None])
-        print('batch nodes shape', self.batch_nodes)
+        #print('batch nodes shape', self.batch_nodes)
         batch_neg_nodes = tf.random_uniform(
                 shape=tf.shape(self.batch_nodes),
                 maxval=self.num_nodes,
@@ -258,18 +256,18 @@ class EPEmbedding:
         is_training = tf.placeholder_with_default(True, shape=())
         for et in self.embed_types:
             v_embeds_h = self._get_embeds_h(self.batch_nodes, et)
-            print('v_embeds_h.shape', v_embeds_h)
+            #print('v_embeds_h.shape', v_embeds_h)
             u_embeds_h = self._get_embeds_h(batch_neg_nodes, et)
-            print('u_embeds_h.shape', u_embeds_h)
+            #print('u_embeds_h.shape', u_embeds_h)
             v_neigh_embeds_h = self._get_neigh_embeds_h(
                 self.batch_nodes, et, is_training)
-            print('v_neigh_embeds_h.shape', v_neigh_embeds_h)
+            #print('v_neigh_embeds_h.shape', v_neigh_embeds_h)
             pos_latent = self._metric(v_neigh_embeds_h, v_embeds_h, et)
-            print('pos latent shape', pos_latent)
+            #print('pos latent shape', pos_latent)
             neg_latent = self._metric(v_neigh_embeds_h, u_embeds_h, et)
            
             losses[et] = self._rank_loss(pos_latent, neg_latent, et)
-            print('computed rank loss')
+            #print('computed rank loss')
             self.run_ops_dict.update(OrderedDict([
                 ("loss_%s" % et, losses[et]),
                 ('v_embeds_h_%s' % et, tf.reduce_mean(v_embeds_h)),
@@ -376,7 +374,7 @@ class EPEmbedding:
             yield {self.batch_nodes: batch_nodes}
     
 
-    def get_edge_weights(self, edges, use_logistic=False):
+    def get_edge_scores(self, edges, use_logistic=False):
         weights = self.decoder.get_edge_logits(edges)
         if use_logistic:
             weights = logistic.cdf(weights)
