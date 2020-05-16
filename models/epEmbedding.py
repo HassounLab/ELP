@@ -32,6 +32,7 @@ default_params = {
      'edge_name': 'rclass_int',
      'edge_weight': 1.0,
      'random_seed': 2020,
+     'early_stopping' : 20,
      'decoder': {
         'num_epochs': 40,
         'batch_size': 2048,
@@ -296,6 +297,7 @@ class EPEmbedding:
 
         sess.run(tf.global_variables_initializer())
         min_train_loss, main_val_loss = float("inf"), float("inf")
+        best_loss_epoch = 0
         for epoch in range(self.p['num_epochs']):
             print("Epoch %d/%d" % (epoch + 1, self.p['num_epochs']))
         
@@ -320,11 +322,15 @@ class EPEmbedding:
                   ", ".join(["%s: %.4f" % (k, v) for k, v in acc_loss_values.items()]))
             if (epoch + 1) % 50 == 0:
                 print('Tme (%fs)' % (time.time() - starttime))
-
+            
             if epoch_train_loss < min_train_loss:
                 min_train_loss = epoch_train_loss
                 if self.p['verbose'] > 1:
                     print("New best training loss")
+                best_loss_epoch = epoch
+            elif epoch - best_loss_epoch >= self.p['early_stopping']:
+                print('Early stopping')
+                break
             if self.val_edges is not None:
                 losses = sess.run(
                     list(self.run_ops_dict.values()), 

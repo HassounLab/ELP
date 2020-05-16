@@ -21,11 +21,11 @@ pathway_names = [
 
 def build_pathway_map(pathway_file, pathway_reaction_link_file, reaction_file, 
                       pathway_map_file, cofactors_file=None):
-    pnums = set([]) # set of pathway numbers we're tracking
-    pname_to_pnum = {} # map pathway names to pathway numbers
     # we assume that it is possible for one pathway to be in multiple pathway groups
     # or that one reaction can be in multiple pathways
-
+    pnamenums = set([]) # set of pathway (name, numbers) we're tracking
+    
+    # this file lists pathway numbers associated with each pathway name
     with open(pathway_file) as f:
         flag = False
         for line in f:
@@ -33,22 +33,21 @@ def build_pathway_map(pathway_file, pathway_reaction_link_file, reaction_file,
                 name = line[2:-1]
                 if name in pathway_names:
                     flag = True
-                    pname_to_pnum[name] = []
                 else:
                     flag = False
             elif flag:
                 pnum = line[:5]
                 assert pnum.isdigit()
-                pnums.add(pnum)
-                pname_to_pnum[name].append(pnum)
+                pnamenums.add((name, pnum))
         for pname in pathway_names:
-            if pname not in pname_to_pnum:
+            if pname not in [pn for pn, _ in pnamenums]:
                 raise RuntimeError('Error: %s not seen in %s' % (pname, pathway_file))
-
-    print('Number of pathway numbers tracking', len(pnums))
-
-    rn_to_pname= {} # map reaction number to list of pathway names
-    pname_to_rn = {} # map pathway names to reaction numbers
+    print('Number of pathway (name, num) pairs tracked in', pathway_file, len(pnamenums))
+    
+    pprint(pnamenums)
+    rn_to_path = {} # map reaction number to list of pathway (name, num)
+    path_seen = set([])
+    # this file links one pathway with one reaction on each line
     with open(pathway_reaction_link_file) as f:
         for line in f:
             if line.startswith('path:rn'):
@@ -58,29 +57,21 @@ def build_pathway_map(pathway_file, pathway_reaction_link_file, reaction_file,
             rn = rn[3:]
             assert len(pnum) == 5 and pnum.isdigit()
             assert len(rn) == 6 and rn.startswith('R') and rn[1:].isdigit()
-            if pnum in pnums:
-                for pname, pns in pname_to_pnum.items():
-                    if pnum in pns:
-                        if pname in pname_to_rn:
-                            pname_to_rn[pname].append(rn)
-                        else:
-                            pname_to_rn[pname] = [rn]
-
-                        if rn in rn_to_pname:
-                            rn_to_pname[rn].append(pname)
-                        else:
-                            rn_to_pname[rn] = [pname]
+            for pname, pn in pnamenums:
+                if pn == pnum:
+                    if rn in rn_to_path:
+                        rn_to_path[rn].append((pname, pn))
+                    else:
+                        rn_to_path[rn] = [(pname, pn)]
+                    path_seen.add(pname)
 
         for pname in pathway_names:
-            if pname not in pname_to_rn:
+            if pname not in path_seen:
                 print('Possible error: %s associated reactions not found in %s' \
                       % (pname, pathway_reaction_link_file))
-    print('Total reactions tracking', len(rn_to_pname))
-
-    print('Number of reactions for each pathway name')
-    for pname, rns in pname_to_rn.items():
-        print(pname, len(rns))
-    
+    print('Total reactions tracking', len(rn_to_path))
+    print('Mean number of pathways associated with each reaction', 
+          np.mean([len(v) for v in rn_to_path.values()]))
     if cofactors_file is not None:
         print('Filtering for cofactors')
         with open(cofactors_file) as f:
@@ -89,18 +80,20 @@ def build_pathway_map(pathway_file, pathway_reaction_link_file, reaction_file,
     else:
         cofactors = None
     
-    pname_to_pairs = {} # map pathway name to list of compound pairs
-    pairs_to_pname = {} # map compound pair to list of pathway names
+    path_to_pairs = {} # map pathway (name, num) to list of compound pairs
+    path_seen = set([])
+    #pairs_to_pname = {} # map compound pair to list of pathway names
+    # this is a file that lists reaction (numbers) and describes the associated reaction
     with open(reaction_file) as f:
         compound_re = re.compile("(C\d+)")
         for line in f:
             rn = line[:6]
             assert rn.startswith('R') and rn[1:].isdigit()
-            if rn in rn_to_pname:
-                pnames = rn_to_pname[rn]
-                for pname in pnames:
-                    if pname not in pname_to_pairs:
-                        pname_to_pairs[pname] = []
+            if rn in rn_to_path:
+                for path in rn_to_path[rn]:
+                    if path not in path_to_pairs:
+                        path_to_pairs[path] = []
+                        path_seen.add(path[0])
                 lhs, rhs = line.split("<=>")
                 reactants = compound_re.findall(lhs)
                 products  = compound_re.findall(rhs)
@@ -109,25 +102,18 @@ def build_pathway_map(pathway_file, pathway_reaction_link_file, reaction_file,
                     products = [p for p in products if p not in cofactors]
                 for r in reactants:
                     for p in products:
-                        pname_to_pairs[pname].append((r, p))
-                        if (r, p) not in pairs_to_pname:
-                            pairs_to_pname[(r, p)] = [pname]
-                        else:
-                            pairs_to_pname[(r, p)].append(pname)
+                        for path in rn_to_path[rn]:
+                            path_to_pairs[path].append((r, p))
         for pname in pathway_names:
-            if pname not in pname_to_pairs:
-                print('Possible error: %s associated reaction pairs not found in %s'\
+            if pname not in path_seen:
+                print('Possible error: %s associated reactions not found in %s' \
                       % (pname, reaction_file))
-    print('Number of reaction pairs tracking:', len(pairs_to_pname))
     print('Number of compound pairs for each pathway name')
-    for pname, cpairs in pname_to_pairs.items():
-        print(pname, len(cpairs))
-    
-    print('Average associated pathways', np.mean([len(x) for x in pairs_to_pname]))
+    for path, cpairs in path_to_pairs.items():
+        print(path, len(cpairs))
     
     with open(pathway_map_file, 'wb') as f:
-        obj = {'pname_to_pairs': pname_to_pairs, 'pairs_to_pname': pairs_to_pname}
-        pickle.dump(obj, f)
+        pickle.dump(path_to_pairs, f)
         print('Dumped mappings to', pathway_map_file)
         
 

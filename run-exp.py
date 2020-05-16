@@ -1,17 +1,17 @@
 import sys
+print(sys.version)
+from pprint import pprint
+print('sys.path')
+pprint(sys.path)
 import numpy as np
 import networkx as nx
 import os
 import json
-import glob
-import time
 from argparse import ArgumentParser
-import pprint
-from datetime import datetime
 import pickle
 from evaluation.linkPrediction import experimentLinkPrediction as expLP
 from evaluation.pathwayReconstruction import experimentPathwayReconstruction as expPR
-
+from evaluation.ruleReconstruction import experimentRuleReconstruction as expRR
 def read_graph(graph_f):
     if graph_f.endswith(".pkl"):
         G = nx.read_gpickle(graph_f)
@@ -44,7 +44,7 @@ def load_fingerprints(G, fgpt_name):
     print('Fingerprint length', len(next(iter(fingerprints.values()))))
     return G
 
-eval_methods = ['lp', 'pr']
+eval_methods = ['lp', 'pr', 'rr']
 def load_params(data, model_type, **kwargs):
     try:
         params = json.load(open("config.json", "r"))[data]
@@ -62,6 +62,7 @@ def load_params(data, model_type, **kwargs):
         if v is None:
             continue
         params[k] = v
+    params['model_type'] = model_type
     print("custom params", params)
     return params
 # wrap this in a function so we don't import certain packages unless we must
@@ -107,12 +108,17 @@ def main(data=None, model_type=None, testmode=False, **kwargs):
                 G = load_fingerprints(G, params['fgpt_name'])
             
         expLP(G, emb_model, resfile, **params)
-    if params['evaluation'] == 'pr':
+    elif params['evaluation'] == 'pr':
         G = read_graph(params['graph_f'])
         if params['use_fgpt']:
             G = load_fingerprints(G, params['fgpt_name'])
         expPR(G, emb_model, resfile, **params)
-    
+    elif params['evalutaion'] == 'rr':
+        G = read_graph(params['graph_f'])
+        if params['use_fgpt']:
+            G = load_fingerprints(G, params['fgpt_name'])
+        expRR(G, emb_model, resfile, **params)
+        
     print('results saved to', resfile)
 if __name__ == "__main__":
     parser = ArgumentParser()

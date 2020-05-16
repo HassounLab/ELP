@@ -19,4 +19,4 @@
 ## -n            |number of cpu 
 #SBATCH -p largemem
 #SBATCH -n 8
-stdbuf -o0 python -u run-exp.py kegg_20 -m logreg --start_from 1 --load_folds
+stdbuf -o0 python -u run-exp.py kegg_20_maccs -m logreg --load_folds --start_from 2

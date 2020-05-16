@@ -4,7 +4,7 @@ import os
 import pickle
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import KFold
-
+from evaluation.metrics import precision_at_ks, mean_average_precision
 def graph_test_train_split_inductive(G, remove_node_ratios=0.05, nrepeat=5): 
     self_loop_edges = nx.selfloop_edges(G)
     print('Removing %d edges because of self loops' % nx.number_of_selfloops(G))
@@ -23,7 +23,7 @@ def graph_test_train_split_inductive(G, remove_node_ratios=0.05, nrepeat=5):
         train_G, test_G = nx.copy(), nx.Graph()
         train_G.name, test_G.name = "train_G_%d" % i, "test_G_%d" % i
         
-        test_edges = np.random.choice(size=num_test_edges, replace=False)
+        test_edges = np.random.choice(edges, size=num_test_edges, replace=False)
         train_G.remove_edges_from(test_edges)
         test_G.add_edges_from(test_edges)
         
@@ -88,12 +88,13 @@ def graph_test_train_split_folds(G, nfolds):
         yield {'train_G': train_G, 'test_G': test_G, 'neg_G': neg_G_}
 
 
-def evaluateLinkPrediction(model, train_G=None, test_G=None, neg_G=None):
+def evaluateLinkPrediction(model, train_G=None, test_G=None, neg_G=None, debug=False):
     assert train_G and test_G and neg_G
     for i, n in enumerate(train_G.nodes):
-        assert i == n, G_.name
-    for n in test_G.nodes:
-        assert n in train_G.nodes
+        assert i == n, train_G.name
+    if not debug:
+        for n in test_G.nodes:
+            assert n in train_G.nodes
     model.learn_embedding(G=train_G)#, val_G=test_G)
  
     true_edges = np.array(test_G.edges())
@@ -118,11 +119,9 @@ def evaluateLinkPrediction(model, train_G=None, test_G=None, neg_G=None):
 def experimentLinkPrediction(G, model, resfile, nfolds=5, load_folds=True, start_from=0,
                              random_seed=None, inductive=False,  **params):
     print("\nLink Prediction experiments")
+    print('Writing results to', resfile)
     if random_seed:
         np.random.seed(random_seed)
-    # todo: comment back in
-    #print("Original G has %d nodes, %d edges" % 
-    #      (G.number_of_nodes(), G.number_of_edges()))
     print("Running LP", "inductively" if inductive else "transductively")
     if not os.path.exists(resfile):
         with open(resfile, 'w') as f:
@@ -137,9 +136,9 @@ def experimentLinkPrediction(G, model, resfile, nfolds=5, load_folds=True, start
         print('Starting from fold', start_from)
     for fold in range(start_from, nfolds):
         print('\nExperiment fold', fold)
-        fname = '%s/kegg/kfolds/kegg_graph_%s_fold_%d_%d.pkl' \
+        fname = '%s/kegg/kfolds/kegg_graph%s_fold_%d_%d.pkl' \
                 % (os.environ['DATAPATH'], 
-                   params['fgpt_name'] if params['use_fgpt'] else '', 
+                   '_' + params['fgpt_name'] if params['use_fgpt'] else '', 
                    fold, nfolds)
         if load_folds:
             print('Loading previously saved train/test set from', fname)
@@ -153,7 +152,15 @@ def experimentLinkPrediction(G, model, resfile, nfolds=5, load_folds=True, start
                     pickle.dump(Gset, f)
                     print('Dumped Gset to', fname)
         
-        AUC, prec_curve, map_ = evaluateLinkPrediction(model, **Gset)
+        if params['model_type'] == 'svm':
+            print('DEBUG: taking first 100 nodes for SVM')
+            nodes = np.array(list(Gset['train_G'].nodes())[:100])
+            Gset['train_G'] = Gset['train_G'].subgraph(nodes)
+            Gset['train_G'] = Gset['train_G'].copy()
+            debug = True
+        else:
+            debug=False 
+        AUC, prec_curve, map_ = evaluateLinkPrediction(model, debug=debug, **Gset)
         with open(resfile, 'a') as f:
             f.write('%r,%f,%s,%f\n'\
                     % (inductive, AUC, ';'.join([str(x) for x in prec_curve]), map_))

@@ -14,9 +14,11 @@ class L2SVM:
         labels = np.zeros(npairs) - 1
         
         k = 0
-        for i in range(G.number_of_nodes() - 1):
+        nnodes = G.number_of_nodes()
+        nnodes = 100
+        for i in range(nnodes - 1):
             fpi = G.nodes[i]['fingerprint']
-            for j in range(i + 1, G.number_of_nodes()):
+            for j in range(i + 1, nnodes):
                 fpj = G.nodes[j]['fingerprint']
                 self.feature_vecs[k] = np.concatenate((
                         fpi & fpj, # common in both
@@ -33,16 +35,19 @@ class L2SVM:
                 k += 1
         assert np.all(labels >= 0)
 
- 
-        self.svm = LinearSVC(loss='hinge', C=self.C,
+        self.feature_vecs = self.feature_vecs.astype(float) 
+        labels = labels.astype(float)
+        self.svm = LinearSVC(loss='hinge', C=self.C, tol=0.1,
                              random_state=self.random_seed, verbose=1)
         self.svm.fit(self.feature_vecs, labels)
+        print('Accuracy on training set', self.svm.score(self.feature_vecs, labels))
 
     def get_edge_scores(self, edges, **kwargs):
         fv1 = [self.feature_vecs[self.mapping[(i, j)]] for (i, j) in edges]
         fv2 = [self.feature_vecs[self.mapping[(j, i)]] for (i, j) in edges]
         ypred1 = self.svm.decision_function(fv1)
         ypred2 = self.svm.decision_function(fv2) 
+        print('SVM decision function sample', ypred1[:20])
         ypred = 0.5 * (ypred1 + ypred2)
         return ypred        
 

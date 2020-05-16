@@ -9,23 +9,9 @@ import time
 from sklearn.metrics import roc_auc_score, roc_curve
 from scipy.stats import logistic
 from sklearn.model_selection import train_test_split, KFold
-from evaluation.eval_util import sample_graph
 from evaluation.metrics import precision_at_ks, mean_average_precision
 
-PATHWAYS = [
-        'Carbohydrate metabolism',
-        'Energy metabolism',
-        'Lipid metabolism',
-        'Nucleotide metabolism',
-        'Amino acid metabolism',
-        'Metabolism of other amino acids',
-        'Glycan biosynthesis and metabolism',
-        'Metabolism of cofactors and vitamins',
-        'Metabolism of terpenoids and polyketides',
-        'Biosynthesis of other secondary metabolites',
-        'Xenobiotics biodegradation and metabolism']
-
-def graph_train_test_split_pathway(G, pname_to_pairs, pathways=None):
+def graph_train_test_split_pathway(G, path_to_pairs, processed_pathways=None):
     nodelistMap = {n: i for i, n in enumerate(G.nodes())}
     G = nx.relabel_nodes(G, nodelistMap)
     print(nx.info(G))
@@ -36,12 +22,11 @@ def graph_train_test_split_pathway(G, pname_to_pairs, pathways=None):
     neg_G = nx.complement(G)
     neg_G.name = 'neg_G'
     print(nx.info(neg_G))
-    
-    if pathways is not None:
-        pname_to_pairs = {p: e for p, e in pname_to_pairs.items() if p in pathways}
 
 
-    for pathway, test_edges in pname_to_pairs.items():
+    for pathway, test_edges in path_to_pairs.items():
+        if pathway in processed_pathways:
+            continue
         print('Testing pathway', pathway)
         test_edges_filtered = []
         for u, v in test_edges:
@@ -61,37 +46,40 @@ def graph_train_test_split_pathway(G, pname_to_pairs, pathways=None):
         print('%s edges between test nodes are also in train_G'\
               % (train_G.subgraph(test_nodes).number_of_edges())) 
         print(nx.info(train_G))
-        neg_edges = neg_G.subgraph(test_nodes).edges()
+        neg_edges = np.array(list(neg_G.subgraph(test_nodes).edges()))
         print('Number of neg edges:', len(neg_edges)) 
-        yield {'train_G': train_G, 'test_edges': test_edges,
-               'neg_edges': neg_edges, 'pathway': pathway}
+        yield {'train_G': train_G, 
+               'test_edges': test_edges, 
+               'neg_edges': neg_edges, 
+               'pathway_name': pathway[0], 
+               'pathway_num': pathway[1]}
 
 
 def experimentPathwayReconstruction(G, model, resfile, pathway_map=None, 
                                     random_seed=None, **params):
     print('\nPathway reconstruction experiments')
+    print('Writing results to', resfile)
     if random_seed:
         np.random.seed(random_seed)
     if pathway_map is None:
         pathway_map = '%s/kegg/pathway_map.pkl' % os.environ['DATAPATH']
     with open(pathway_map, 'rb') as f:
-        pname_to_pairs = pickle.load(f)['pname_to_pairs']
+        path_to_pairs = pickle.load(f)
     if not os.path.exists(resfile):
         with open(resfile, 'w') as f:
-            f.write('pathway,AUC,precision_curve\n')
+            f.write('pathway_name,pathway_num,AUC,precision_curve\n')
     else:
-        processed_pathways = []
+        processed_pathways = set([])
         with open(resfile) as f:
             f.readline()
             for line in f:
-                processed_pathways.append(line.split(',')[0])
-        pathways = [p for p in PATHWAYS if p not in processed_pathways]
-        print('pathways left to process', pathways)
-    for Gset in graph_train_test_split_pathway(G, pname_to_pairs, pathways):
+                pname, pnum = line.split(',')[:2]
+                processed_pathways.add((pname, pnum))
+        print('Processed pathways:', processed_pathways)
+    for Gset in graph_train_test_split_pathway(G, path_to_pairs, processed_pathways):
         train_G, test_edges = Gset['train_G'], Gset['test_edges']
         neg_edges = Gset['neg_edges']
         model.learn_embedding(G=train_G)
-    
         edges = np.concatenate((test_edges, neg_edges))
         ytrue = np.concatenate((np.ones(len(test_edges)), np.zeros(len(neg_edges))))
         yscore = model.get_edge_scores(edges, use_logistic=True)
@@ -102,6 +90,9 @@ def experimentPathwayReconstruction(G, model, resfile, pathway_map=None,
         print('Precision curve', prec_curve)
         print('MAP', map_)
         with open(resfile, 'a') as f:
-            f.write('%s,%f,%s\n' 
-                    % (Gset['pathway'], AUC, ';'.join([str(x) for x in prec_curve])))
+            f.write('%s,%s,%f,%s\n' 
+                    % (Gset['pathway_name'], 
+                       Gset['pathway_num'], 
+                       AUC, 
+                       ';'.join([str(x) for x in prec_curve])))
 

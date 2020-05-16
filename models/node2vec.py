@@ -7,6 +7,7 @@ from scipy.stats import logistic
 from models.nnEmbeddingDecoder import NNEmbeddingDecoder
 class Node2vec:
     def __init__(self, embed_size=128, **kwargs):
+        self.embed_size = embed_size
         self.nn_kwargs = kwargs["nn"] if "nn" in kwargs else {} # dictionary containing params for nn
         if "num_epochs" not in self.nn_kwargs:
             self.nn_kwargs["num_epochs"] = 40
@@ -21,7 +22,6 @@ class Node2vec:
         if "hidden_sizes" not in self.nn_kwargs:
             self.nn_kwargs["hidden_sizes"] = [max(4, self.embed_size // 2),
                                               max(2, self.embed_size // 4)]
-        self.embed_size = embed_size
     def learn_embedding(self, G, neg_G=None, random_seed=None, **kwargs):
         self.random_seed = random_seed
         assert G is not None

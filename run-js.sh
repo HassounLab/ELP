@@ -18,5 +18,6 @@
 ## -N            |number of nodes
 ## -n            |number of cpu 
 #SBATCH -n 8
-stdbuf -o0 python -u run-exp.py kegg_20_pc -m js -e lp 
-#stdbuf -o0 python -u run-exp.py kegg_old_maccs -m js -e lp 
+#stdbuf -o0 python -u run-exp.py kegg_20_pc -m js -e lp 
+source activate lipinggpu
+stdbuf -o0 python -u run-exp.py kegg_20_maccs -m js -e rr 

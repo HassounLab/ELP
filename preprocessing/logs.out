@@ -1,0 +1,18 @@
+Name: 
+Type: Graph
+Number of nodes: 8825
+Number of edges: 30714
+Average degree:   6.9607
+Removing 65 cofactors in G
+Name: 
+Type: Graph
+Number of nodes: 8760
+Number of edges: 20289
+Average degree:   4.6322
+Saved to /cluster/tufts/hassounlab/yjiang06//kegg/kegg_2020_edgelist.lst
+
+
+8121/8744 compounds have MACCS fingerprints
+Dumped to /cluster/tufts/hassounlab/yjiang06//kegg/kegg_2020_maccs_fp.pkl
+7211/8744 compounds have Pubchem fingerprints
+Dumped to /cluster/tufts/hassounlab/yjiang06//kegg/kegg_2020_pubchem_fp.pkl
