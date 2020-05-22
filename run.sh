@@ -23,6 +23,4 @@
 #SBATCH --exclude=pgpu01
 nvidia-smi
 source activate lipinggpu
-stdbuf -o0 python -u run-exp.py kegg_20_pc -m ep -e lp --load_folds --start_from 4
-#stdbuf -o0 python -u run-exp.py kegg_20_node_only -m ep -e lp
-#stdbuf -o0 python -u run-exp.py kegg_20 -m ep -e pr
+stdbuf -o0 python -u run-exp.py kegg_20_maccs_ec -m ep -e lp

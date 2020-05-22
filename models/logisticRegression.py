@@ -3,16 +3,16 @@ from sklearn.metrics import make_scorer, roc_auc_score
 import numpy as np
 
 class LogisticRegression:
-    def __init__(self, C=1, Cs=10, use_fgpt=True, random_seed=None, use_cv=True, **kwargs):
+    def __init__(self, C=1, Cs=10, use_fgpt=True, random_seed=None, use_cv=False, **kwargs):
         assert use_fgpt
         self.random_seed = random_seed
         self.C = C
         self.Cs = Cs
         self.use_cv = use_cv
         if use_cv: 
-            print('Logistic Regression CV params\n\tCs:', Cs)
+            print('Logistic Regression (using CV) params\n\tCs:', Cs)
         else:
-            print('Logistic Regression params\n\tC:', C)
+            print('Logistic Regression (not using CV) params\n\tC:', C)
     
         print('\trandom_seed:', random_seed)
     def learn_embedding(self, G, **kwargs):

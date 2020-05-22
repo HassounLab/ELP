@@ -10,7 +10,7 @@ def graph_test_train_split_inductive(G, remove_node_ratios=0.05, nrepeat=5):
     print('Removing %d edges because of self loops' % nx.number_of_selfloops(G))
     G.remove_edges_from(self_loop_edges)
     nodelist = G.nodes()
-    nodelistmap = dict(zip(nodelist, range(len(nodelist))))
+    nodelistMap = dict(zip(nodelist, range(len(nodelist))))
     G = nx.relabel_nodes(G, nodelistMap)
     molecule_names = {v: k for k, v in nodelistMap.items()}
     neg_G = nx.complement(G)
@@ -20,10 +20,10 @@ def graph_test_train_split_inductive(G, remove_node_ratios=0.05, nrepeat=5):
     fgpt_attr = nx.get_node_attributes(G, name='fingerprint')
     for i in range(nrepeat):
         
-        train_G, test_G = nx.copy(), nx.Graph()
+        train_G, test_G = G.copy(), nx.Graph()
         train_G.name, test_G.name = "train_G_%d" % i, "test_G_%d" % i
-        
-        test_edges = np.random.choice(edges, size=num_test_edges, replace=False)
+        where = np.random.choice(np.arange(len(edges)), size=num_test_edges, replace=False)
+        test_edges = edges[where] 
         train_G.remove_edges_from(test_edges)
         test_G.add_edges_from(test_edges)
         
@@ -131,8 +131,12 @@ def experimentLinkPrediction(G, model, resfile, nfolds=5, load_folds=True, start
         load_folds, start_from = False, 0 
     else:
         if not load_folds:
-            assert start_from == 0
             Gs = graph_test_train_split_folds(G, nfolds)
+            if start_from > 0:
+                print('Not loading fold but also starting from nonzero')
+                for _ in range(start_from):
+                    next(Gs)
+
         print('Starting from fold', start_from)
     for fold in range(start_from, nfolds):
         print('\nExperiment fold', fold)
@@ -145,16 +149,18 @@ def experimentLinkPrediction(G, model, resfile, nfolds=5, load_folds=True, start
             with open(fname, 'rb') as f:
                 Gset =  pickle.load(f)
         else:
-            assert not os.path.exists(fname), fname
             Gset = next(Gs)
             if not inductive:
-                with open(fname, 'wb') as f:
-                    pickle.dump(Gset, f)
-                    print('Dumped Gset to', fname)
+                if os.path.exists(fname):
+                    print(fname, 'already exists, not overwriting')
+                else:
+                    with open(fname, 'wb') as f:
+                        pickle.dump(Gset, f)
+                        print('Dumped Gset to', fname)
         
         if params['model_type'] == 'svm':
-            print('DEBUG: taking first 100 nodes for SVM')
-            nodes = np.array(list(Gset['train_G'].nodes())[:100])
+            print('DEBUG: taking first 20 nodes for SVM')
+            nodes = np.array(list(Gset['train_G'].nodes())[:20])
             Gset['train_G'] = Gset['train_G'].subgraph(nodes)
             Gset['train_G'] = Gset['train_G'].copy()
             debug = True

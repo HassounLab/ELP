@@ -2,15 +2,15 @@
 #
 #SBATCH --account=normal
 #
-#SBATCH --job-name=n2v
+#SBATCH --job-name=elp
 #
 ## output files
-#SBATCH --output=logs/output-n2v-%j.log
-#SBATCH --error=logs/output-n2v-%j.err
+#SBATCH --output=logs/output-ep-lp-%j.log
+#SBATCH --error=logs/output-ep-lp-%j.err
 #
 # Estimated running time. 
 # The job will be killed when it runs 15 min longer than this time.
-#SBATCH --time=0-7:00:00
+#SBATCH --time=0-24:00:00
 #SBATCH --mem=75gb
 #
 ## Resources 
@@ -23,4 +23,4 @@
 #SBATCH --exclude=pgpu01
 nvidia-smi
 source activate lipinggpu
-stdbuf -o0 python -u run-exp.py kegg_20_n2vshort -m n2v -e lp --load_folds
+stdbuf -o0 python -u run-exp.py kegg_20_pc_inductive -m ep -e lp --random_seed 2019

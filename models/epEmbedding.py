@@ -23,14 +23,12 @@ default_params = {
      'num_epochs': 500,
      'batch_size': 2048,
      'gamma': 10,
-     'lr': 0.5,
+     'lr': 0.01,
      'verbose': 1,
      'use_fgpt': True,
      'use_edge_attr': False,
      'use_node_embed': True,
-     'beta': 0,
-     'edge_name': 'rclass_int',
-     'edge_weight': 1.0,
+     'beta': 0.0002,
      'random_seed': 2020,
      'early_stopping' : 20,
      'decoder': {
@@ -38,9 +36,9 @@ default_params = {
         'batch_size': 2048,
         'beta': 0,
         'verbose': 2,
-        'lr': 0.1,
-        'hidden_sizes': None,
-        'random_seed': None
+        'lr': 0.01,
+        'hidden_sizes': [32, 16],
+        'random_seed': 2020
     }
 }
 
@@ -51,18 +49,12 @@ class EPEmbedding:
         for k in default_params:
             if k != 'decoder' and k in params:
                 self.p[k] = params[k]
-
-        for k in default_params['decoder']:
-            if k in params['decoder']:
-                self.p['decoder'][k] = params['decoder'][k]
-
+        if 'decoder' in params:
+            for k in default_params['decoder']:
+                if k in params['decoder']:
+                    self.p['decoder'][k] = params['decoder'][k]
+        
         assert self.p['use_node_embed'] or self.p['use_fgpt']
-
-        if self.p['decoder']['hidden_sizes'] is None:
-            self.p['decoder']["hidden_sizes"] = [max(4, self.p['embed_size'] // 2),
-                                                 max(2, self.p['embed_size'] // 4)]
-        if self.p['decoder']['random_seed'] is None:
-            self.p['decoder']["random_seed"] = self.p['random_seed']
 
         print('\n'.join('\t%s: %r' % (k, v) for k, v in self.p.items()))
     def get_embeddings(self):
@@ -131,18 +123,23 @@ class EPEmbedding:
         
         if self.p['use_edge_attr']:
             num_edge_attrs = 0
-            for u, v, ri in G.edges(data=self.p['edge_name']):
+            for u, v, ri in G.edges(data='edge_attr'):
+                """
                 if undirected and u > v:
                     continue
+                """
                 if ri is not None:
-                    assert isinstance(ri, int)
+                    #assert isinstance(ri, int)
                     ri += 1
                     num_edge_attrs = max(num_edge_attrs, ri)
+                    adjmat_np[u, v] = adjmat_np[v, u] = ri
+                    """
                     assert adjmat_np[u, v] 
                     adjmat_np[u, v] = ri
                     if undirected:
                         assert adjmat_np[v, u]
                         adjmat_np[v, u] = ri
+                    """
             assert num_edge_attrs > 0, "no edge attrs found"
             num_edge_attrs += 1
             self.num_embeds[EDGE_ATTR_EMBED] = num_edge_attrs
@@ -164,11 +161,12 @@ class EPEmbedding:
             raise ValueError("embed type not valid")
     
     def _get_edge_embeds_h(self, v, u_nodes):
-        v = tf.cast(v, dtype=tf.float32)
+        v = tf.expand_dims(v, 0)
+       # v = tf.cast(v, dtype=tf.float32)
         v_nodes = tf.tile(v, [tf.shape(u_nodes)[0]])
         v_nodes = tf.cast(v_nodes, dtype=tf.int64)
-        v_nodes_p = tf.reshape(tf.minimum(v_nodes, u_nodes), (-1, 1))
-        u_nodes_p = tf.reshape(tf.maximum(v_nodes, u_nodes), (-1, 1))
+        #v_nodes_p = tf.reshape(tf.minimum(v_nodes, u_nodes), (-1, 1))
+        #u_nodes_p = tf.reshape(tf.maximum(v_nodes, u_nodes), (-1, 1))
         edges = tf.concat((v_nodes_p, u_nodes_p), axis=1)
         lookup_ids = tf.gather_nd(self.adjmat, edges)
         lookup_ids = tf.cast(lookup_ids, dtype=tf.int64)
@@ -197,7 +195,6 @@ class EPEmbedding:
             num_neigh_nodes = tf.maximum(num_neigh_nodes, 1) 
             neigh_node_es = self._get_embeds_h(neigh_nodes, et)
             if self.p['use_edge_attr']:
-                v = tf.expand_dims(v, 0)
                 #v_tiled = tf.tile(v, [num_neigh_nodes])
                 neigh_node_es += self._get_edge_embeds_h(v, neigh_nodes)
             e = tf.reduce_sum(neigh_node_es, axis=0)
@@ -359,13 +356,12 @@ class EPEmbedding:
         
         
         tf.keras.backend.set_learning_phase(0)
-        with tf.variable_scope("nn_decoder"):
-            self.decoder = NNEmbeddingDecoder(
-                self.final_embeddings,
-                self.edges,
-                self.neg_edges,
-                **self.p['decoder'])
-    
+        self.decoder = None
+    def get_embeddings(self, nodes=None):
+        if nodes is None:
+            return self.final_embeddings
+        return self.final_embeddings[nodes]
+     
     def _generate_batch(self, shuffle=True, drop_last=False, use_orig=False):
         if shuffle and not use_orig:
             np.random.shuffle(self.nodes)
@@ -381,6 +377,13 @@ class EPEmbedding:
     
 
     def get_edge_scores(self, edges, use_logistic=False):
+        if self.decoder is None:
+            with tf.variable_scope("nn_decoder"):
+                self.decoder = NNEmbeddingDecoder(
+                    self.final_embeddings,
+                    self.edges,
+                    self.neg_edges,
+                    **self.p['decoder'])
         weights = self.decoder.get_edge_logits(edges)
         if use_logistic:
             weights = logistic.cdf(weights)

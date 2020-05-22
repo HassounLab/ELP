@@ -1,5 +1,6 @@
 from sklearn.svm import LinearSVC
 import numpy as np
+import networkx as nx
 
 class L2SVM:
     def __init__(self, C=1, use_fgpt=True, random_seed=None, **kwargs):
@@ -8,6 +9,8 @@ class L2SVM:
         self.C = C
         print('L2SVM params -- C: %f\trandom_seed: %r' % (C, random_seed))
     def learn_embedding(self, G, **kwargs):
+        print('l2svm G')
+        print(nx.info(G))
         npairs = G.number_of_nodes() * (G.number_of_nodes() - 1)
         self.mapping = {}
         self.feature_vecs = np.zeros((npairs, len(G.nodes[0]['fingerprint']) * 3))
@@ -15,7 +18,6 @@ class L2SVM:
         
         k = 0
         nnodes = G.number_of_nodes()
-        nnodes = 100
         for i in range(nnodes - 1):
             fpi = G.nodes[i]['fingerprint']
             for j in range(i + 1, nnodes):
@@ -37,10 +39,12 @@ class L2SVM:
 
         self.feature_vecs = self.feature_vecs.astype(float) 
         labels = labels.astype(float)
+        print('%d training instance' % (len(labels)))
         self.svm = LinearSVC(loss='hinge', C=self.C, tol=0.1,
                              random_state=self.random_seed, verbose=1)
         self.svm.fit(self.feature_vecs, labels)
-        print('Accuracy on training set', self.svm.score(self.feature_vecs, labels))
+        print('Training completed')
+        print('Accuracy on training set', self.svm.score(self.feature_vecs[:50], labels[:50]))
 
     def get_edge_scores(self, edges, **kwargs):
         fv1 = [self.feature_vecs[self.mapping[(i, j)]] for (i, j) in edges]

@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 import re
 import os
 import networkx as nx
@@ -15,11 +16,12 @@ def build_reaction_edgelist(reaction_file, output_edgelist=None, cofactor_file=N
             products  = compound_re.findall(rhs)
             for r in reactants:
                 for p in products:
-                    G.add_edge(r, p)
+                    if r != p:
+                        G.add_edge(r, p)
     print('All reactions')
     print(nx.info(G)) 
     if cofactor_file is not None:
-        with open(cofactor_file, 'r') as f:
+        with open(cofactor_file, encoding='utf-8-sig') as f:
             cofactors = f.read().splitlines()
         cofactors = ['C' + '0' * (5 - len(x)) + x for x in cofactors]
         cofactors = [c for c in cofactors if c in G.nodes]

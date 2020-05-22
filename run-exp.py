@@ -12,7 +12,10 @@ import pickle
 from evaluation.linkPrediction import experimentLinkPrediction as expLP
 from evaluation.pathwayReconstruction import experimentPathwayReconstruction as expPR
 from evaluation.ruleReconstruction import experimentRuleReconstruction as expRR
-def read_graph(graph_f):
+from evaluation.visualization import experimentVisualization as expVIZ
+
+def read_graph(graph_f=None, use_fgpt=False, use_edge_attr=False, 
+               fgpt_name=None, edge_name=None, **kwargs):
     if graph_f.endswith(".pkl"):
         G = nx.read_gpickle(graph_f)
     else:
@@ -23,8 +26,29 @@ def read_graph(graph_f):
     G.remove_edges_from(self_loop_edges)
     G.name = 'G'
     print(nx.info(G))
+    if use_fgpt:
+        G = load_fingerprints(G, fgpt_name)
+    if use_edge_attr:
+        G = load_edge_attr(G, edge_name)
     return G
 
+def load_edge_attr(G, edge_name):
+    edge_file = '%s/kegg/kegg_2020_%s_edge.pkl' \
+                % (os.environ['DATAPATH'], edge_name)
+    print('Loading edge labels from', edge_file)
+    with open(edge_file, 'rb') as f:
+        edge_attr = pickle.load(f)
+    print('%d edges have edge attributes' % len(edge_attrs))
+    edge_attr = {(u, v): l for (u, v), l in edge_attr.items() if G.has_edge(u, v)}
+    print('%d edge with edge attributes exist in G' % len(edge_attrs))
+    labels = sorted(set(edge_attr.values()))
+    mapping = dict(zip(labels, range(len(labels))))
+    print('%d unique edge labels' % len(mapping))
+    edge_attr = {k: mapping[v] for k, v in edge_attr.items()}
+    nx.set_edge_attributes(G, values=edge_attr, name='edge_attr')
+    print('G loaded with edges')
+    return G
+     
 
 def load_fingerprints(G, fgpt_name):
     fingerprint_file = '%s/kegg/kegg_2020_%s_fp.pkl' \
@@ -44,7 +68,7 @@ def load_fingerprints(G, fgpt_name):
     print('Fingerprint length', len(next(iter(fingerprints.values()))))
     return G
 
-eval_methods = ['lp', 'pr', 'rr']
+eval_methods = ['lp', 'pr', 'rr', 'viz']
 def load_params(data, model_type, **kwargs):
     try:
         params = json.load(open("config.json", "r"))[data]
@@ -87,44 +111,46 @@ def get_model(model_type):
         from models.logisticRegression import LogisticRegression
         return LogisticRegression
     raise NameError('model type', model_type, 'not recognized')
-       
+
+def get_experiment(evaluation):
+    if evaluation == 'lp':
+        return expLP
+    elif evaluation == 'pr':
+        return expPR
+    elif evaluation == 'rr':
+        return expRR
+    elif evaluation == 'viz':
+        return expVIZ
+    raise NameError('Evaluation method', evalaution, 'not recognized')
+
 def main(data=None, model_type=None, testmode=False, **kwargs):
     params = load_params(data, model_type, **kwargs)
-    model = get_model(model_type)
-    """
-    G = read_graph(params['graph_f'])
-    if params['use_fgpt']:
-        G = load_fingerprints(G, params['fgpt_name'])
-    """
-    emb_model = model(**params)
-    resfile = 'logs/%s-%s-%s.results.txt' % (data, model_type, params['evaluation'])       
-    if params['evaluation'] == 'lp':
-        if params['load_folds']:
-            G = None
-        else:
-            print('loading original graph')
-            G = read_graph(params['graph_f'])
-            if params['use_fgpt']:
-                G = load_fingerprints(G, params['fgpt_name'])
-            
-        expLP(G, emb_model, resfile, **params)
-    elif params['evaluation'] == 'pr':
-        G = read_graph(params['graph_f'])
-        if params['use_fgpt']:
-            G = load_fingerprints(G, params['fgpt_name'])
-        expPR(G, emb_model, resfile, **params)
-    elif params['evalutaion'] == 'rr':
-        G = read_graph(params['graph_f'])
-        if params['use_fgpt']:
-            G = load_fingerprints(G, params['fgpt_name'])
-        expRR(G, emb_model, resfile, **params)
-        
-    print('results saved to', resfile)
+    if params['evaluation'] == 'lp' and params['load_folds']:
+        G = None
+    else:
+        G = read_graph(**params)
+    
+    Model = get_model(model_type)
+    model = Model(**params)
+
+    if not os.path.exists('logs'):
+        os.mkdir ('logs')
+
+    params['resfile'] = 'logs/%s-%s-%s.results.txt' \
+                        % (data, model_type, params['evaluation'])
+    exp = get_experiment(params['evaluation'])
+    exp(G, model, **params)
+    print('results saved to', params['resfile'])
+
+
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument('data')
     parser.add_argument('-m', '--model_type', default=None)
-    parser.add_argument('-e', '--evaluation', default=None) 
+    parser.add_argument('-e', '--evaluation', default='lp')
+    parser.add_argument(
+            '--graph_f', 
+            default='%s/kegg/kegg_2020.edgelist' % os.environ['DATAPATH']) 
     parser.add_argument("--batch_size", type=int, default=None)
     parser.add_argument("--beta", type=float, default=None)
     parser.add_argument("--beta_edge", type=float, default=None)
@@ -134,11 +160,11 @@ if __name__ == "__main__":
     parser.add_argument("--use_fgpt", default=None, action="store_true")
     parser.add_argument("--use_edge_attr", default=None, action="store_true")
     parser.add_argument("--edge_name", default=None)
-    parser.add_argument('--random_seed', default=2020) 
+    parser.add_argument('--random_seed', type=int, default=2020) 
     parser.add_argument("--inductive", default=None, action="store_true")
     parser.add_argument('--fgpt_name', default=None)
     parser.add_argument('--load_folds', action='store_true')
-    parser.add_argument('--start_from', default=0, type=int)
+    parser.add_argument('--start_from', type=int, default=0)
     args = vars(parser.parse_args())
     print(args)
     main(**args)

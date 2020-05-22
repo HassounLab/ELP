@@ -1,203 +1,111 @@
 
 {
-    "kegg_20_pc": {
-        "evaluation": "lp",
-        "decoder" : {
-            "hidden_sizes": [32, 16],
-            "lr": 0.01
-        }, 
-        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
-        "fgpt_name": "pubchem",
-        "embed_sizes": [128],
-        "lp": {
-            "sampling": false
+    "kegg_20_debug": {
+        "ep": {
+            "num_epochs": 1,
+            "decoder": {
+                "num_epochs": 1
+            }
         },
-        "logreg": {
-            "use_cv": true
-        },
-        "batch_size": 2048,
-        "lr": 0.01,
-        "gamma": 10,
-        "beta": 0.0002,
-        "rounds": 1,
-        "edge_weight": 0.5,
         "use_fgpt": true,
-        "edge_name": "rclass_int",
+        "fgpt_name": "maccs",
+        "use_node_embed": true
+    },
+    "kegg_20_pc": {
+        "fgpt_name": "pubchem",
+        "use_fgpt": true,
+        "use_node_embed": true
+    },
+    "kegg_20_pc_inductive": {
+        "fgpt_name": "pubchem",
+        "lp": {
+            "inductive": true
+        },
+        "use_fgpt": true,
+        "use_node_embed": false
+    },
+    "kegg_20_maccs_inductive": {
+        "fgpt_name": "maccs",
+        "lp": {
+            "inductive": true
+        },
+        "use_fgpt": true,
+        "use_node_embed": false
+    },
+    "kegg_20_maccs_ec": {
+        "fgpt_name": "maccs",
+        "edge_name": "ec",
+        "use_edge": true,
+        "use_fgpt": true,
         "use_node_embed": true
     },
     "kegg_20_maccs": {
-        "evaluation": "lp",
-        "decoder" : {
-            "hidden_sizes": [32, 16],
-            "lr": 0.01
-        }, 
-        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
         "fgpt_name": "maccs",
-        "embed_sizes": [128],
-        "lp": {
-            "sampling": false
-        },
-        "batch_size": 2048,
-        "lr": 0.01,
-        "gamma": 10,
-        "beta": 0.0002,
-        "rounds": 1,
-        "edge_weight": 0.5,
         "use_fgpt": true,
-        "edge_name": "rclass_int",
-        "use_node_embed": false
+        "use_node_embed": true,
+        "viz": {
+            "pathway_numbers": ["00010", "00020"]
+        }
+    },
+    "kegg_20_n2vdfs": {
+        "use_fgpt": false,
+        "use_node_embed": true,
+        "n2v": {
+            "p": 1,
+            "q": 0.5,
+            "l": 10,
+            "k": 5
+        }
+    },
+    "kegg_20_n2vshort": {
+        "use_fgpt": false,
+        "use_node_embed": true,
+        "n2v": {
+            "p": 1,
+            "q": 1,
+            "l": 10,
+            "k": 5
+        }
+    },
+    "kegg_20_node_only_n2vbfs": {
+        "use_fgpt": false,
+        "use_node_embed": true,
+        "n2v": {
+            "q": 2,
+            "l": 10,
+            "k": 5
+        }
     },
     "kegg_20_node_only": {
-        "evaluation": "lp",
-        "decoder" : {
-            "hidden_sizes": [32, 16],
-            "lr": 0.01
-        }, 
-        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
-        "embed_sizes": [128],
-        "lp": {
-            "sampling": false
-        },
-        "batch_size": 2048,
-        "lr": 0.01,
-        "gamma": 10,
-        "beta": 0.0002,
-        "rounds": 1,
-        "edge_weight": 0.5,
         "use_fgpt": false,
-        "edge_name": "rclass_int",
-        "use_node_embed": true
+        "use_node_embed": true,
+        "viz": {
+            "pathway_numbers": ["00010", "00020"]
+        }
+    },
+    "kegg_20_pc_only": {
+        "fgpt_name": "pubchem",
+        "use_fgpt": true,
+        "use_node_embed": false
     },
     "kegg_20_maccs_only": {
-        "evaluation": "lp",
-        "decoder" : {
-            "hidden_sizes": [32, 16],
-            "lr": 0.01
-        }, 
-        "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg_2020.edgelist",
         "fgpt_name": "maccs",
-        "embed_sizes": [128],
-        "lp": {
-            "sampling": false
-        },
-        "batch_size": 2048,
-        "lr": 0.01,
-        "gamma": 10,
-        "beta": 0.0002,
-        "rounds": 1,
-        "edge_weight": 0.5,
         "use_fgpt": true,
-        "edge_name": "rclass_int",
         "use_node_embed": false
     },
     "kegg_old_maccs": {
-        "evaluation": "lp",
-        "decoder" : {
-            "hidden_sizes": [32, 16],
-            "lr": 0.01
-        }, 
         "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg.eclass.pkl",
         "fgpt_name": "maccs",
-        "embed_sizes": [128],
-        "lp": {
-            "sampling": false,
-            "load_prev": false
-        },
-        "batch_size": 2048,
-        "lr": 0.01,
-        "gamma": 10,
-        "beta": 0.0002,
-        "rounds": 1,
-        "edge_weight": 0.5,
         "use_fgpt": true,
-        "edge_name": "rclass_int",
         "use_node_embed": true
     },
     "kegg_old_pc": {
-        "evaluation": "lp",
-        "num_epochs": 1,
-        "decoder" : {
-            "hidden_sizes": [32, 16],
-            "num_epochs": 1,
-            "lr": 0.01
-        }, 
         "graph_f": "/cluster/tufts/hassounlab/yjiang06/kegg/kegg.eclass.pkl",
         "fgpt_name": "pubchem",
-        "embed_sizes": [128],
-        "lp": {
-            "sampling": false,
-            "load_prev": false
-        },
-        "batch_size": 2048,
-        "lr": 0.01,
-        "gamma": 10,
-        "beta": 0.0002,
-        "rounds": 1,
-        "edge_weight": 0.5,
         "use_fgpt": true,
-        "edge_name": "rclass_int",
         "use_node_embed": true
-    },
-    
-    "kegg-pub": {
-        "pred_modes": ["nn"],
-        "evaluations": ["lp"],
-        "num_epochs": 100,
-        "nn" : {
-            "hidden_sizes": [32, 16],
-            "lr": 0.1
-        }, 
-        "mol_vae": {
-            "do_tgru": false,
-            "num_embed_layers": 5,
-            "embed_activation": "linear"
-        },
-        "graph_f": "kegg.pubchem.pkl",
-        "embed_sizes": [128],
-        "lp": {
-            "sampling": false
-        },
-        "mol_vae_weight": 1.0,
-        "batch_size": 128,
-        "lr": 1.0,
-        "lr_node_attr": 0.0001,
-        "lr_mol_vae": 0.0001,
-        "beta": 0.0002,
-        "repeat": 1,
-        "train_verbose": 1,
-        "lp_test_ratios": [0.50],
-        "rounds": 1,
-        "use_edge_attr": false,
-        "use_fgpt": true,
-        "fgpt_name": "pubchem_fgpt",
-        "use_node_attr": false,
-        "node_attr_postpone": 10,
-        "use_node_embed": true,
-        "savepath": "logs/em",
-        "save_embeddings": false,
-        "classify_encodings": false,
-        "stack_embeddings": false
-    },
-    "karate": {
-        "lr": 0.01,
-        "K": 2,
-        "num_epochs": 300,
-        "batch_size": 16,
-        "num_samples": 16,
-        "oslom": {
-            "num_samples_comm": 1
-        },
-        "cfinder": {
-            "num_samples_comm": 2
-        },
-        "repeat": 1,
-        "train_verbose": 2,
-        "embed_sizes": [16],
-        "num_samples_aw": 2,        
-        "nn_batch_size": 8,
-        "walk_length": 5,
-        "evaluations": ["gr"]
     }
+
 }
 
        

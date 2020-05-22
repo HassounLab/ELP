@@ -34,7 +34,8 @@ class Deepwalk:
             G.to_undirected(), 
             os.path.join(os.environ["TMPDIR"], "tmpKeggGraph.txt"), 
             data=False)
-        cmd =  "python3 -m deepwalk "\
+               #"python3 -m deepwalk "\
+        cmd =  'deepwalk ' \
                "--input %s/tmpKeggGraph.txt --output %s/tmpKeggGraph.emb "\
                "--format edgelist --representation-size %d"\
                % (os.environ["TMPDIR"], os.environ["TMPDIR"], self.embed_size)
@@ -43,7 +44,7 @@ class Deepwalk:
         print("Deep walk run finished")
         self._load_embedding("%s/tmpKeggGraph.emb" % os.environ["TMPDIR"])
         self.num_nodes = self.embeddings.shape[0]
-        self.nn_decoder = None 
+        self.nn_decoder = self._run_nn_decoder()
 
 
     def _load_embedding(self, file_name):
@@ -64,8 +65,6 @@ class Deepwalk:
         return decoder
 
     def get_edge_scores(self, edges, use_logistic=False, **kwargs): 
-        if not self.nn_decoder:
-            self.nn_decoder = self._run_nn_decoder()
         weights = self.nn_decoder.get_edge_logits(edges)
         if use_logistic:
             weights = logistic.cdf(weights)

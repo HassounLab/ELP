@@ -40,7 +40,8 @@ class NNEmbeddingDecoder:
 
         self._print_params()
         self._run_nn()
-
+    def reset_graph(self):
+        tf.reset_default_graph() 
     def _print_params(self):
         print("Neural network embedding decoder") 
         print("\tembed_size=%d\n\tnum_epochs=%d\n\tbatch_size=%d\n\tbeta=%f\n\t"
@@ -113,7 +114,6 @@ class NNEmbeddingDecoder:
         regs = []
         for scope_idx in range(len(self.embeddings)):
             with tf.variable_scope("params%d" % scope_idx, reuse=tf.AUTO_REUSE):
-                
                 h_in_sizes = self.hidden_sizes[:-1]
                 h_out_sizes = self.hidden_sizes[1:]
                 for i, (hin, hout) in enumerate(zip(h_in_sizes, h_out_sizes)):
@@ -160,6 +160,7 @@ class NNEmbeddingDecoder:
         regs = self._regularizer()
         loss = cross_ent + self.beta * sum(regs)
 
+        #with tf.variable_scope("adamop", reuse=tf.AUTO_REUSE):
         op = tf.train.AdamOptimizer(self.lr).minimize(loss)
         
         self.sess = tf.Session()
