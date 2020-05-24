@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 import os
 import pickle
-def experimentVisualization(G, model, pathway_numbers, random_seed=None, **params):
+def experimentVisualization(G, model, pathway_numbers, res_prefix=None, random_seed=None, **params):
     print('\n Visualization experiments')
     print('Visualization pathways', pathway_numbers)
     if random_seed:
@@ -19,15 +19,16 @@ def experimentVisualization(G, model, pathway_numbers, random_seed=None, **param
             for u, v in edges:
                 test_nodes.add(u)
                 test_nodes.add(v)
+    test_nodes = [n for n in test_nodes if G.has_node(n)]
     print('Number of test nodes', len(test_nodes))
     nodelist = G.nodes()
     nodelistMap = dict(zip(nodelist, range(len(nodelist))))
     G = nx.relabel_nodes(G, nodelistMap)
     molecule_map = {v: k for k, v in nodelistMap.items() if k in test_nodes}    
     model.learn_embedding(G=G)
-    test_nodes = np.array(list(test_nodes))
+    test_nodes = np.array([nodelistMap[n] for n in test_nodes])
     embeddings = model.get_embeddings(test_nodes) 
-    fname = '%s/visualization_%s.npz'\
-            % (os.environ['DATAPATH'], '_'.join(pathway_numbers))
+    fname = '%s/%s_visualization_%s.npz'\
+            % (os.environ['DATAPATH'], res_prefix, '_'.join(pathway_numbers))
     np.savez(fname, embeddings=embeddings, molecule_map=molecule_map)
     print('Embeddings saved to', fname) 

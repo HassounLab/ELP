@@ -18,6 +18,7 @@ def graph_test_train_split_inductive(G, remove_node_ratios=0.05, nrepeat=5):
     num_test_edges = int(len(edges) * remove_node_ratios + 1)
     print('Sampling %d edges for inductive testing' % num_test_edges)
     fgpt_attr = nx.get_node_attributes(G, name='fingerprint')
+    edge_attr = nx.get_edge_attributes(G, name='edge_attr')
     for i in range(nrepeat):
         
         train_G, test_G = G.copy(), nx.Graph()
@@ -29,6 +30,9 @@ def graph_test_train_split_inductive(G, remove_node_ratios=0.05, nrepeat=5):
         
         nx.set_node_attributes(train_G, values=fgpt_attr, name='fingerprint')
         nx.set_node_attributes(test_G, values=fgpt_attr, name='fingerprint')
+
+        nx.set_edge_attributes(train_G, values=edge_attr, name='edge_attr')
+        nx.set_edge_attributes(test_G, values=edge_attr, name='edge_attr')
         
         nx.set_node_attributes(train_G, values=molecule_names, name='molecule')  
         nx.set_node_attributes(test_G, values=molecule_names, name='molecule')  
@@ -49,6 +53,7 @@ def graph_test_train_split_folds(G, nfolds):
     neg_G = nx.complement(G)
     kf = KFold(n_splits=nfolds, shuffle=True)
     fgpt_attr = nx.get_node_attributes(G, name='fingerprint')
+    edge_attr = nx.get_edge_attributes(G, name='edge_attr')
     for i, (train_idx, test_idx) in enumerate(kf.split(edges)):
         test_G = nx.Graph()
         test_G.add_edges_from(edges[test_idx])
@@ -60,16 +65,16 @@ def graph_test_train_split_folds(G, nfolds):
         remove_nodes = [n for n, d in G.degree() if d == 0]
         print('Removing %d nodes from train_G due to no neighbors' % len(remove_nodes))
         train_G.remove_nodes_from(remove_nodes)
-        """
-        if not nx.is_connected(train_G):
-            train_G = max(nx.weakly_connected_component_subgraphs(
-                                train_G.to_directed()), 
-                          key=len)
-        """
+        
         nx.set_node_attributes(train_G, values=fgpt_attr, name='fingerprint')
         nx.set_node_attributes(test_G, values=fgpt_attr, name='fingerprint')
+        
+        nx.set_edge_atrributes(train_G, values=edge_attr, name='edge_attr')
+        nx.set_edge_attributes(test_G, values=edge_attr, name='edge_attr')
+            
         nodelist = train_G.nodes()
         nodelistMap = dict(zip(nodelist, range(len(nodelist))))    
+        
         train_G = nx.relabel_nodes(train_G, nodelistMap)
 
         test_G = test_G.subgraph(nodelist).copy()
@@ -79,6 +84,7 @@ def graph_test_train_split_folds(G, nfolds):
         nx.set_node_attributes(train_G, values=molecule_names, name='molecule')  
         nx.set_node_attributes(test_G, values=molecule_names, name='molecule')  
         
+    
         neg_G_ = neg_G.subgraph(nodelist).copy()
         neg_G_ = nx.relabel_nodes(neg_G_, nodelistMap)
         
@@ -116,9 +122,10 @@ def evaluateLinkPrediction(model, train_G=None, test_G=None, neg_G=None, debug=F
     return AUC, precision_curve, map_
 
 
-def experimentLinkPrediction(G, model, resfile, nfolds=5, load_folds=True, start_from=0,
+def experimentLinkPrediction(G, model, res_prefix=None, nfolds=5, load_folds=True, start_from=0,
                              random_seed=None, inductive=False,  **params):
     print("\nLink Prediction experiments")
+    resfile = '%s.results.txt' % res_prefix
     print('Writing results to', resfile)
     if random_seed:
         np.random.seed(random_seed)

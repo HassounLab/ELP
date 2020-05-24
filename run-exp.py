@@ -14,7 +14,7 @@ from evaluation.pathwayReconstruction import experimentPathwayReconstruction as 
 from evaluation.ruleReconstruction import experimentRuleReconstruction as expRR
 from evaluation.visualization import experimentVisualization as expVIZ
 
-def read_graph(graph_f=None, use_fgpt=False, use_edge_attr=False, 
+def read_graph(graph_f=None, use_fgpt=False, use_edge=False, 
                fgpt_name=None, edge_name=None, **kwargs):
     if graph_f.endswith(".pkl"):
         G = nx.read_gpickle(graph_f)
@@ -28,7 +28,7 @@ def read_graph(graph_f=None, use_fgpt=False, use_edge_attr=False,
     print(nx.info(G))
     if use_fgpt:
         G = load_fingerprints(G, fgpt_name)
-    if use_edge_attr:
+    if use_edge:
         G = load_edge_attr(G, edge_name)
     return G
 
@@ -38,9 +38,9 @@ def load_edge_attr(G, edge_name):
     print('Loading edge labels from', edge_file)
     with open(edge_file, 'rb') as f:
         edge_attr = pickle.load(f)
-    print('%d edges have edge attributes' % len(edge_attrs))
+    print('%d edges have edge attributes' % len(edge_attr))
     edge_attr = {(u, v): l for (u, v), l in edge_attr.items() if G.has_edge(u, v)}
-    print('%d edge with edge attributes exist in G' % len(edge_attrs))
+    print('%d edge with edge attributes exist in G' % len(edge_attr))
     labels = sorted(set(edge_attr.values()))
     mapping = dict(zip(labels, range(len(labels))))
     print('%d unique edge labels' % len(mapping))
@@ -134,13 +134,12 @@ def main(data=None, model_type=None, testmode=False, **kwargs):
     model = Model(**params)
 
     if not os.path.exists('logs'):
-        os.mkdir ('logs')
+        os.mkdir('logs')
 
-    params['resfile'] = 'logs/%s-%s-%s.results.txt' \
+    params['res_prefix'] = 'logs/%s-%s-%s' \
                         % (data, model_type, params['evaluation'])
     exp = get_experiment(params['evaluation'])
     exp(G, model, **params)
-    print('results saved to', params['resfile'])
 
 
 if __name__ == "__main__":
@@ -158,7 +157,7 @@ if __name__ == "__main__":
     parser.add_argument("--nn_lr", type=float, default=None)
     parser.add_argument("--use_node_embed", default=None, action="store_true")
     parser.add_argument("--use_fgpt", default=None, action="store_true")
-    parser.add_argument("--use_edge_attr", default=None, action="store_true")
+    parser.add_argument("--use_edge", default=None, action="store_true")
     parser.add_argument("--edge_name", default=None)
     parser.add_argument('--random_seed', type=int, default=2020) 
     parser.add_argument("--inductive", default=None, action="store_true")

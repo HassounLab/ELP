@@ -112,8 +112,9 @@ def evaluatePR(model, pnum_to_test_edge_idx=None, test_edges=None,
                % (pathway_name, pnum, len(test_edge_idx), AUC, prec_curve, map_)
     return res
 
-def experimentPathwayReconstruction(G, model, resfile, pathway_map=None, 
+def experimentPathwayReconstruction(G, model, res_prefix=None, pathway_map=None, 
                                     random_seed=None, **params):
+    resfile = '%s.results.txt' % res_prefix
     print('\nPathway reconstruction experiments')
     print('Writing results to', resfile)
     if random_seed:

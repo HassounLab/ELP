@@ -26,11 +26,11 @@ default_params = {
      'lr': 0.01,
      'verbose': 1,
      'use_fgpt': True,
-     'use_edge_attr': False,
+     'use_edge': False,
      'use_node_embed': True,
      'beta': 0.0002,
      'random_seed': 2020,
-     'early_stopping' : 20,
+     'early_stopping' : 50,
      'decoder': {
         'num_epochs': 40,
         'batch_size': 2048,
@@ -121,7 +121,7 @@ class EPEmbedding:
             print("Fgpt length", self.num_embeds[FGPT_EMBED])
             self.embed_types.append(FGPT_EMBED)
         
-        if self.p['use_edge_attr']:
+        if self.p['use_edge']:
             num_edge_attrs = 0
             for u, v, ri in G.edges(data='edge_attr'):
                 """
@@ -173,7 +173,7 @@ class EPEmbedding:
         
         es = tf.nn.embedding_lookup(self.embeddings[EDGE_ATTR_EMBED], 
                                     lookup_ids)
-        #print("edge embeds", es)
+        print("edge embeds", es)
         return es
 
     def _get_neigh_embeds_h(self, v_nodes, et, is_training): 
@@ -194,7 +194,7 @@ class EPEmbedding:
             #print('num neigh nodes shape (expect singleton)', num_neigh_nodes)
             num_neigh_nodes = tf.maximum(num_neigh_nodes, 1) 
             neigh_node_es = self._get_embeds_h(neigh_nodes, et)
-            if self.p['use_edge_attr']:
+            if self.p['use_edge']:
                 #v_tiled = tf.tile(v, [num_neigh_nodes])
                 neigh_node_es += self._get_edge_embeds_h(v, neigh_nodes)
             e = tf.reduce_sum(neigh_node_es, axis=0)
@@ -247,7 +247,7 @@ class EPEmbedding:
                 shape=tf.shape(self.batch_nodes),
                 maxval=self.num_nodes,
                 dtype=tf.int64)
-        if self.p['use_edge_attr']:
+        if self.p['use_edge']:
             self._make_embed_variables(EDGE_ATTR_EMBED)
         losses = {}
         self.run_ops_dict = OrderedDict({'obj': 0})
@@ -280,7 +280,7 @@ class EPEmbedding:
         self.run_ops_dict['obj'] = obj = loss + reg
         
         optimizer = tf.train.AdamOptimizer(self.p['lr']).minimize(obj)
-        if self.p['use_edge_attr']: 
+        if self.p['use_edge']: 
             self._edge_embed_assign_zeros_row_one()
 
             
@@ -354,13 +354,12 @@ class EPEmbedding:
         endtime = time.time()
         print("Time taken to learn graph embeddings: %fs" % (endtime - starttime))
         
-        
         tf.keras.backend.set_learning_phase(0)
         self.decoder = None
     def get_embeddings(self, nodes=None):
         if nodes is None:
-            return self.final_embeddings
-        return self.final_embeddings[nodes]
+            return np.concatenate(self.final_embeddings, axis=1)
+        return np.concatenate([e[nodes] for e in self.final_embeddings], axis=1)
      
     def _generate_batch(self, shuffle=True, drop_last=False, use_orig=False):
         if shuffle and not use_orig:

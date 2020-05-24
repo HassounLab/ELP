@@ -44,7 +44,7 @@ class L2SVM:
                              random_state=self.random_seed, verbose=1)
         self.svm.fit(self.feature_vecs, labels)
         print('Training completed')
-        print('Accuracy on training set', self.svm.score(self.feature_vecs[:50], labels[:50]))
+        print('Accuracy on training set', self.svm.score(self.feature_vecs[:10], labels[:10]))
 
     def get_edge_scores(self, edges, **kwargs):
         fv1 = [self.feature_vecs[self.mapping[(i, j)]] for (i, j) in edges]
