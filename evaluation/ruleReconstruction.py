@@ -59,9 +59,9 @@ def graph_train_test_split_rules(G, test_rules, test_edges_list):
                'rule_num': rule}
 
 def sample_test_rules(rclass_to_edges, rule_prevalences, n_sample, 
-                      test_rules_file):
+                      test_rules_file, random_seed):
     if rule_prevalences is None:
-        rule_prevalences = [0, 0.4]
+        rule_prevalences = [0.4, 0.6]
 
     rclass_counts = [(rc, len(edges)) for rc, edges in rclass_to_edges.items()]
     rclass = pd.DataFrame(rclass_counts, columns=['rclass', 'freq'])
@@ -92,7 +92,7 @@ def sample_test_rules(rclass_to_edges, rule_prevalences, n_sample,
 def experimentRuleReconstruction(G, model, res_prefix=None, test_rules_file='./test_rules.txt', 
                                  rclass_to_edges_file=None, random_seed=None, 
                                  rule_prevalences=None, n_sample=5, **params):
-    resfile = '%s.results.txt' % res_prefix
+    resfile = 'logs/%s.results.txt' % res_prefix
     print('\nRule reconstruction experiments')
     print('Writing results to', resfile)
     if random_seed:
@@ -105,7 +105,7 @@ def experimentRuleReconstruction(G, model, res_prefix=None, test_rules_file='./t
     
     if not os.path.exists(test_rules_file):
         sample_test_rules(rclass_to_edges, rule_prevalences, n_sample, 
-                          test_rules_file)
+                          test_rules_file, random_seed)
     with open(test_rules_file) as f:
         test_rules = [r[:-1] for r in f.readlines()]
     
@@ -115,7 +115,8 @@ def experimentRuleReconstruction(G, model, res_prefix=None, test_rules_file='./t
             f.readline()
             for line in f:
                 rule = line.split(',')[0]
-                test_rules.remove(rule)
+                if rule in test_rules:
+                    test_rules.remove(rule)
     else:
         with open(resfile, 'w') as f:
             f.write('rule_num,rule_count,AUC,precision_curve,MAP\n')

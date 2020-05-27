@@ -1,7 +1,7 @@
 from sklearn.svm import LinearSVC
 import numpy as np
 import networkx as nx
-
+from sklearn.metrics import roc_auc_score
 class L2SVM:
     def __init__(self, C=1, use_fgpt=True, random_seed=None, **kwargs):
         assert use_fgpt
@@ -22,17 +22,11 @@ class L2SVM:
             fpi = G.nodes[i]['fingerprint']
             for j in range(i + 1, nnodes):
                 fpj = G.nodes[j]['fingerprint']
-                self.feature_vecs[k] = np.concatenate((
-                        fpi & fpj, # common in both
-                        (fpi ^ fpj) & fpi, # only in fpi
-                        (fpi ^ fpj) & fpj)) # only in fpj                  
+                self.feature_vecs[k] = self._make_feature_vecs(fpi, fpj)
                 labels[k] = labels[k + 1] = int(G.has_edge(i, j))
                 self.mapping[(i, j)] = k
                 k += 1
-                self.feature_vecs[k] = np.concatenate((
-                        fpi & fpj,
-                        (fpi ^ fpj) & fpj, 
-                        (fpi ^ fpj) & fpi))
+                self.feature_vecs[k] = self._make_feature_vecs(fpj, fpi)
                 self.mapping[(j, i)] = k 
                 k += 1
         assert np.all(labels >= 0)
@@ -45,10 +39,33 @@ class L2SVM:
         self.svm.fit(self.feature_vecs, labels)
         print('Training completed')
         print('Accuracy on training set', self.svm.score(self.feature_vecs[:10], labels[:10]))
+    
+        test_true_edges = list(G.edges())[:10]
+        test_neg_edges = list(nx.complement(G).edges())[:10]
+        yscore = self.get_edge_scores(test_true_edges + test_neg_edges)
+        ylabel = np.concatenate((np.ones(10), np.zeros(10)))
+        auc = roc_auc_score(ylabel, yscore)
+        print('AUC on training set', auc)
+        self.G = G
 
+    def _get_feature_vecs(self, edge):
+        try:
+            return self.feature_vecs[self.mapping[edge]]
+        except KeyError:
+            i, j = edge
+            fpi = self.G.nodes[i]['fingerprint']
+            fpj = self.G.nodes[j]['fingerprint']
+            return self._make_feature_vecs(fpi, fpj)
+
+    def _make_feature_vecs(self, fpi, fpj):
+        return np.concatenate((
+            fpi & fpj, # common in both
+            (fpi ^ fpj) & fpi, # only in fpi
+            (fpi ^ fpj) & fpj)) # only in fpj                  
+    
     def get_edge_scores(self, edges, **kwargs):
-        fv1 = [self.feature_vecs[self.mapping[(i, j)]] for (i, j) in edges]
-        fv2 = [self.feature_vecs[self.mapping[(j, i)]] for (i, j) in edges]
+        fv1 = [self._get_feature_vecs((i, j)) for (i, j) in edges]
+        fv2 = [self._get_feature_vecs((j, i)) for (i, j) in edges]
         ypred1 = self.svm.decision_function(fv1)
         ypred2 = self.svm.decision_function(fv2) 
         print('SVM decision function sample', ypred1[:20])

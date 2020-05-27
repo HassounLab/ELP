@@ -34,17 +34,25 @@
     },
     "kegg_20_maccs_rc": {
         "fgpt_name": "maccs",
-        "edge_name": "ec",
+        "edge_name": "rc",
         "use_edge": true,
         "use_fgpt": true,
-        "use_node_embed": true
+        "use_node_embed": true,
+        "lr": 0.001,
+        "decoder": {
+            "num_epochs": 20
+        }
     },
     "kegg_20_maccs_ec": {
         "fgpt_name": "maccs",
         "edge_name": "ec",
         "use_edge": true,
         "use_fgpt": true,
-        "use_node_embed": true
+        "use_node_embed": true,
+        "lr": 0.001,
+        "decoder": {
+            "num_epochs": 20
+        }
     },
     "kegg_20_maccs": {
         "fgpt_name": "maccs",

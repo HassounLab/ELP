@@ -136,8 +136,8 @@ def main(data=None, model_type=None, testmode=False, **kwargs):
     if not os.path.exists('logs'):
         os.mkdir('logs')
 
-    params['res_prefix'] = 'logs/%s-%s-%s' \
-                        % (data, model_type, params['evaluation'])
+    params['res_prefix'] = '%s-%s-%s' \
+                           % (data, model_type, params['evaluation'])
     exp = get_experiment(params['evaluation'])
     exp(G, model, **params)
 

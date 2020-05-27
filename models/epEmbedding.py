@@ -29,6 +29,7 @@ default_params = {
      'use_edge': False,
      'use_node_embed': True,
      'beta': 0.0002,
+     'beta_edge': 0.0002,
      'random_seed': 2020,
      'early_stopping' : 50,
      'decoder': {
@@ -165,9 +166,11 @@ class EPEmbedding:
        # v = tf.cast(v, dtype=tf.float32)
         v_nodes = tf.tile(v, [tf.shape(u_nodes)[0]])
         v_nodes = tf.cast(v_nodes, dtype=tf.int64)
+        v_nodes = tf.reshape(v_nodes, (-1, 1))
+        u_nodes = tf.reshape(u_nodes, (-1, 1))
         #v_nodes_p = tf.reshape(tf.minimum(v_nodes, u_nodes), (-1, 1))
         #u_nodes_p = tf.reshape(tf.maximum(v_nodes, u_nodes), (-1, 1))
-        edges = tf.concat((v_nodes_p, u_nodes_p), axis=1)
+        edges = tf.concat((v_nodes, u_nodes), axis=1)
         lookup_ids = tf.gather_nd(self.adjmat, edges)
         lookup_ids = tf.cast(lookup_ids, dtype=tf.int64)
         

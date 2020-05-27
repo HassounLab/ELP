@@ -114,7 +114,7 @@ def evaluatePR(model, pnum_to_test_edge_idx=None, test_edges=None,
 
 def experimentPathwayReconstruction(G, model, res_prefix=None, pathway_map=None, 
                                     random_seed=None, **params):
-    resfile = '%s.results.txt' % res_prefix
+    resfile = 'logs/%s.results.txt' % res_prefix
     print('\nPathway reconstruction experiments')
     print('Writing results to', resfile)
     if random_seed:

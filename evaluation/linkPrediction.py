@@ -69,7 +69,7 @@ def graph_test_train_split_folds(G, nfolds):
         nx.set_node_attributes(train_G, values=fgpt_attr, name='fingerprint')
         nx.set_node_attributes(test_G, values=fgpt_attr, name='fingerprint')
         
-        nx.set_edge_atrributes(train_G, values=edge_attr, name='edge_attr')
+        nx.set_edge_attributes(train_G, values=edge_attr, name='edge_attr')
         nx.set_edge_attributes(test_G, values=edge_attr, name='edge_attr')
             
         nodelist = train_G.nodes()
@@ -125,7 +125,7 @@ def evaluateLinkPrediction(model, train_G=None, test_G=None, neg_G=None, debug=F
 def experimentLinkPrediction(G, model, res_prefix=None, nfolds=5, load_folds=True, start_from=0,
                              random_seed=None, inductive=False,  **params):
     print("\nLink Prediction experiments")
-    resfile = '%s.results.txt' % res_prefix
+    resfile = 'logs/%s.results.txt' % res_prefix
     print('Writing results to', resfile)
     if random_seed:
         np.random.seed(random_seed)
@@ -177,6 +177,7 @@ def experimentLinkPrediction(G, model, res_prefix=None, nfolds=5, load_folds=Tru
         with open(resfile, 'a') as f:
             f.write('%r,%f,%s,%f\n'\
                     % (inductive, AUC, ';'.join([str(x) for x in prec_curve]), map_))
+        print('Saved to', resfile)
 
 
 
