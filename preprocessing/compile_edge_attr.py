@@ -6,6 +6,7 @@ import os
 import pickle
 import numpy as np
 import pandas as pd
+import random
 LIGAND = '%s/kegg/Ligand_April_20_2020/' % os.environ['DATAPATH']
 
 def compile_edge_attr(reaction_lst, el_reaction_list, output_file,
@@ -81,16 +82,13 @@ def compile_edge_attr(reaction_lst, el_reaction_list, output_file,
                 el_counts[el] += 1
         if len(el_counts) == 0:
             continue
-        max_el, count = max(el_counts.items(), key=itemgetter(1))
-        del el_counts[max_el]
-        if len(el_counts) > 0:
-            max_el2, count2 = max(el_counts.items(), key=itemgetter(1))
-            if count2 == count:
-                #print('Possible error: edge (%s, %s) has two most common ELs'\
-                #      ' %s and %s' % (u, v, max_el, max_el2))
-                #print(el_counts)
-                num_ambiguous += 1
-            continue
+        max_el_count = max(el_counts.values())
+        els = [el for el, c in el_counts.items() if c == max_el_count]
+        if len(els) > 1:
+            num_ambiguous += 1
+            max_el = random.choice(els)
+        else:
+            max_el = els[0]
         edge_to_el[(u,v)] = max_el
     print('Num ambiguous edge labels', num_ambiguous)
     print('# edges with edge label', len(edge_to_el))

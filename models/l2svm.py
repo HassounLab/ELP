@@ -30,9 +30,6 @@ class L2SVM:
                 self.mapping[(j, i)] = k 
                 k += 1
         assert np.all(labels >= 0)
-
-        self.feature_vecs = self.feature_vecs.astype(float) 
-        labels = labels.astype(float)
         print('%d training instance' % (len(labels)))
         self.svm = LinearSVC(loss='hinge', C=self.C, tol=0.1,
                              random_state=self.random_seed, verbose=1)
@@ -61,7 +58,7 @@ class L2SVM:
         return np.concatenate((
             fpi & fpj, # common in both
             (fpi ^ fpj) & fpi, # only in fpi
-            (fpi ^ fpj) & fpj)) # only in fpj                  
+            (fpi ^ fpj) & fpj)).astype(np.float32) # only in fpj                  
     
     def get_edge_scores(self, edges, **kwargs):
         fv1 = [self._get_feature_vecs((i, j)) for (i, j) in edges]

@@ -165,15 +165,7 @@ def experimentLinkPrediction(G, model, res_prefix=None, nfolds=5, load_folds=Tru
                         pickle.dump(Gset, f)
                         print('Dumped Gset to', fname)
         
-        if params['model_type'] == 'svm':
-            print('DEBUG: taking first 20 nodes for SVM')
-            nodes = np.array(list(Gset['train_G'].nodes())[:20])
-            Gset['train_G'] = Gset['train_G'].subgraph(nodes)
-            Gset['train_G'] = Gset['train_G'].copy()
-            debug = True
-        else:
-            debug=False 
-        AUC, prec_curve, map_ = evaluateLinkPrediction(model, debug=debug, **Gset)
+        AUC, prec_curve, map_ = evaluateLinkPrediction(model, **Gset)
         with open(resfile, 'a') as f:
             f.write('%r,%f,%s,%f\n'\
                     % (inductive, AUC, ';'.join([str(x) for x in prec_curve]), map_))

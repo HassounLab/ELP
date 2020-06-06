@@ -10,8 +10,9 @@
 #
 # Estimated running time. 
 # The job will be killed when it runs 15 min longer than this time.
-#SBATCH --time=0-12:00:00
-#SBATCH --mem=100gb
+# SBATCH --time=1-12:00:00
+#SBATCH --time=2:00:00
+#SBATCH --mem=500gb
 #
 ## Resources 
 ## -p gpu/batch  |job type
