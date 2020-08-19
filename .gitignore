@@ -3,3 +3,7 @@
 *.err
 *.npz
 __pycache__
+*.sh
+*.txt
+*config*
+logs/

@@ -13,6 +13,7 @@ from evaluation.linkPrediction import experimentLinkPrediction as expLP
 from evaluation.pathwayReconstruction import experimentPathwayReconstruction as expPR
 from evaluation.ruleReconstruction import experimentRuleReconstruction as expRR
 from evaluation.visualization import experimentVisualization as expVIZ
+from evaluation.organismReconstruction import experimentOrganismReconstruction as expOR
 
 def read_graph(graph_f=None, use_fgpt=False, use_edge=False, 
                fgpt_name=None, edge_name=None, **kwargs):
@@ -119,6 +120,8 @@ def get_experiment(evaluation):
         return expPR
     elif evaluation == 'rr':
         return expRR
+    elif evaluation == 'or':
+        return expOR
     elif evaluation == 'viz':
         return expVIZ
     raise NameError('Evaluation method', evalaution, 'not recognized')
@@ -149,7 +152,7 @@ if __name__ == "__main__":
     parser.add_argument('-e', '--evaluation', default='lp')
     parser.add_argument(
             '--graph_f', 
-            default='%s/kegg/kegg_2020.edgelist' % os.environ['DATAPATH']) 
+            default='%s/kegg/kegg_2020_consolidated.edgelist' % os.environ['DATAPATH']) 
     parser.add_argument("--batch_size", type=int, default=None)
     parser.add_argument("--beta", type=float, default=None)
     parser.add_argument("--beta_edge", type=float, default=None)

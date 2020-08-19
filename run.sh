@@ -17,10 +17,14 @@
 ## -p gpu/batch  |job type
 ## -N            |number of nodes
 ## -n            |number of cpu 
-#SBATCH -p gpu 
+# SBATCH -p gpu 
 #SBATCH -N 2
 #SBATCH -n 2
 #SBATCH --exclude=pgpu01
 nvidia-smi
 source activate lipinggpu
-stdbuf -o0 python -u run-exp.py kegg_20_maccs_ec -m ep -e lp
+#use sklearn installed here
+export PYTHONPATH="/cluster/tufts/liulab/lib/anaconda3/envs/lipinggpu/lib/python3.7/site-packages/:$PYTHONPATH"
+#stdbuf -o0 python -u run-exp.py kegg_20_node_only -m ep -e lp --load_folds --start_from 4
+#stdbuf -o0 python -u run-exp.py kegg_20_maccs -m ep -e lp
+stdbuf -o0 python -u run-exp.py kegg_20_maccs -m ep -e lp

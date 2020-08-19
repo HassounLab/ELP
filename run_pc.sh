@@ -23,4 +23,5 @@
 #SBATCH --exclude=pgpu01
 nvidia-smi
 source activate lipinggpu
-stdbuf -o0 python -u run-exp.py kegg_20_pc_only -m ep -e lp --load_folds
+export PYTHONPATH="/cluster/tufts/liulab/lib/anaconda3/envs/lipinggpu/lib/python3.7/site-packages/:$PYTHONPATH"
+stdbuf -o0 python -u run-exp.py kegg_20_pc_only -m ep -e lp 

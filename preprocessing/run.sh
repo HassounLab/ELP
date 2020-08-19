@@ -17,9 +17,8 @@
 ## -p gpu/batch  |job type
 ## -N            |number of nodes
 ## -n            |number of cpu 
-#source activate liping
-#stdbuf -o0 python3 -u build_reaction_edgelist.py
-#source activate my-rdkit-env
-#stdbuf -o0 python3 -u compile_maccs_fp.py
-stdbuf -o0 python3 -u compile_pubchem_fp.py
+source activate lipinggpu
+export PYTHONPATH="/cluster/tufts/liulab/lib/anaconda3/envs/lipinggpu/lib/python3.7/site-packages/:$PYTHONPATH"
+
+stdbuf -o0 python3 -u consolidate_graph.py
 

@@ -1,13 +1,15 @@
 from sklearn.svm import LinearSVC
+from liblinearutil import train, predict, parameter
 import numpy as np
 import networkx as nx
 from sklearn.metrics import roc_auc_score
 class L2SVM:
-    def __init__(self, C=1, use_fgpt=True, random_seed=None, **kwargs):
+    def __init__(self, C=1e-11, s=3, use_fgpt=True, random_seed=None, **kwargs):
         assert use_fgpt
         self.random_seed = random_seed
         self.C = C
-        print('L2SVM params -- C: %f\trandom_seed: %r' % (C, random_seed))
+        self.s = s
+        print('L2SVM params -- C: %f\ts: %d\trandom_seed: %r' % (C, s, random_seed))
     def learn_embedding(self, G, **kwargs):
         print('l2svm G')
         print(nx.info(G))
@@ -31,12 +33,21 @@ class L2SVM:
                 k += 1
         assert np.all(labels >= 0)
         print('%d training instance' % (len(labels)))
+        """
         self.svm = LinearSVC(loss='hinge', C=self.C, tol=0.1,
                              random_state=self.random_seed, verbose=1)
         self.svm.fit(self.feature_vecs, labels)
         print('Training completed')
         print('Accuracy on training set', self.svm.score(self.feature_vecs[:10], labels[:10]))
-    
+        """
+        # -s 3 is l2 regularized l1 loss functino
+        params = '-s 2 -C' # parameter selection
+        params = '-s %d -c %f' % (self.s, self.C) 
+        
+        print('SVM param:', params)
+        
+        self.svm = train(labels, self.feature_vecs, params)
+        print('SVM instance', self.svm)
         test_true_edges = list(G.edges())[:10]
         test_neg_edges = list(nx.complement(G).edges())[:10]
         yscore = self.get_edge_scores(test_true_edges + test_neg_edges)
@@ -63,9 +74,15 @@ class L2SVM:
     def get_edge_scores(self, edges, **kwargs):
         fv1 = [self._get_feature_vecs((i, j)) for (i, j) in edges]
         fv2 = [self._get_feature_vecs((j, i)) for (i, j) in edges]
+        """
         ypred1 = self.svm.decision_function(fv1)
         ypred2 = self.svm.decision_function(fv2) 
-        print('SVM decision function sample', ypred1[:20])
+        """
+        fakey = np.zeros(len(fv1))
+        _, _, ypred1 = predict(fakey, fv1, self.svm)
+        _, _, ypred2 = predict(fakey, fv2, self.svm)
+        ypred1, ypred2 = np.array(ypred1), np.array(ypred2)
+        #print('SVM decision function sample', ypred1[:20])
         ypred = 0.5 * (ypred1 + ypred2)
         return ypred        
 

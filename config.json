@@ -32,11 +32,19 @@
         "use_fgpt": true,
         "use_node_embed": false
     },
-    "kegg_20_maccs_rc": {
-        "fgpt_name": "maccs",
+    "kegg_20_pc_ec": {
+        "fgpt_name": "pubchem",
+        "edge_name": "ec",
+        "use_edge": true,
+        "use_fgpt": true,
+        "use_node_embed": true,
+        "early_stopping": 100,
+        "num_epochs": 1000
+    },
+    "kegg_20_pc_rc": {
+        "fgpt_name": "pubchem",
         "edge_name": "rc",
         "use_edge": true,
-        "lr": 0.001,
         "use_fgpt": true,
         "use_node_embed": true,
         "early_stopping": 100,
@@ -48,7 +56,6 @@
         "use_edge": true,
         "use_fgpt": true,
         "use_node_embed": true,
-        "lr": 0.001,
         "early_stopping": 100,
         "num_epochs": 1000
     },
@@ -91,6 +98,9 @@
     },
     "kegg_20_node_only": {
         "use_fgpt": false,
+        "lp": {
+            "save_roc_curve": true
+        },
         "use_node_embed": true,
         "viz": {
             "pathway_numbers": ["00010", "00020"]

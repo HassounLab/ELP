@@ -1,8 +1,9 @@
 import networkx as nx
 import numpy as np
+import time
 import os
 import pickle
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, roc_curve
 from sklearn.model_selection import KFold
 from evaluation.metrics import precision_at_ks, mean_average_precision
 def graph_test_train_split_inductive(G, remove_node_ratios=0.05, nrepeat=5): 
@@ -94,15 +95,18 @@ def graph_test_train_split_folds(G, nfolds):
         yield {'train_G': train_G, 'test_G': test_G, 'neg_G': neg_G_}
 
 
-def evaluateLinkPrediction(model, train_G=None, test_G=None, neg_G=None, debug=False):
+def evaluateLinkPrediction(model, train_G=None, test_G=None, neg_G=None, 
+                          debug=False, res_prefix=None, save_roc_curve=False):
     assert train_G and test_G and neg_G
     for i, n in enumerate(train_G.nodes):
         assert i == n, train_G.name
     if not debug:
         for n in test_G.nodes:
             assert n in train_G.nodes
+    start_time = time.time()
     model.learn_embedding(G=train_G)#, val_G=test_G)
- 
+    time_taken = time.time() - start_time
+    print('Time taken', time_taken)
     true_edges = np.array(test_G.edges())
 
     rand_idx = np.random.choice(
@@ -119,11 +123,16 @@ def evaluateLinkPrediction(model, train_G=None, test_G=None, neg_G=None, debug=F
     print("Precision curve", precision_curve)
     map_ = mean_average_precision(edges, y_score, true_edges)
     print('MAP', map_)
-    return AUC, precision_curve, map_
+    if save_roc_curve:
+        fpr, tpr, thresholds = roc_curve(y_true, y_score)
+        roc_curve_file = '%s/%s_roc_curve.npz' % (os.environ['DATAPATH'], res_prefix)
+        np.savez(roc_curve_file, fpr=fpr, tpr=tpr, thresholds=thresholds, AUC=AUC) 
+        print('Saved roc curves', roc_curve_file)
+    return AUC, precision_curve, map_, time_taken
 
 
 def experimentLinkPrediction(G, model, res_prefix=None, nfolds=5, load_folds=True, start_from=0,
-                             random_seed=None, inductive=False,  **params):
+                             random_seed=None, inductive=False, save_roc_curve=False, **params):
     print("\nLink Prediction experiments")
     resfile = 'logs/%s.results.txt' % res_prefix
     print('Writing results to', resfile)
@@ -132,7 +141,7 @@ def experimentLinkPrediction(G, model, res_prefix=None, nfolds=5, load_folds=Tru
     print("Running LP", "inductively" if inductive else "transductively")
     if not os.path.exists(resfile):
         with open(resfile, 'w') as f:
-            f.write('inductive,AUC,precision_curve,MAP\n')
+            f.write('inductive,AUC,precision_curve,MAP,time\n')
     if inductive:
         Gs = graph_test_train_split_inductive(G)
         load_folds, start_from = False, 0 
@@ -165,10 +174,14 @@ def experimentLinkPrediction(G, model, res_prefix=None, nfolds=5, load_folds=Tru
                         pickle.dump(Gset, f)
                         print('Dumped Gset to', fname)
         
-        AUC, prec_curve, map_ = evaluateLinkPrediction(model, **Gset)
+        AUC, prec_curve, map_, time_taken = evaluateLinkPrediction(
+                model, 
+                res_prefix=res_prefix, 
+                save_roc_curve=save_roc_curve,
+                **Gset)
         with open(resfile, 'a') as f:
-            f.write('%r,%f,%s,%f\n'\
-                    % (inductive, AUC, ';'.join([str(x) for x in prec_curve]), map_))
+            f.write('%r,%f,%s,%f,%d\n'\
+                    % (inductive, AUC, ';'.join([str(x) for x in prec_curve]), map_, time_taken))
         print('Saved to', resfile)
 
 
